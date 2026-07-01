@@ -314,7 +314,7 @@ mainheart = RunService.RenderStepped:Connect(function(dt)
 		if closingSpeed <= 0 then closingSpeed = speed end 
 		
 		local timetotarget = dist / closingSpeed
-		local ping = localplayer:GetNetworkPing() / 2
+		local ping = localplayer:GetNetworkPing()
 		local totaltime = timetotarget + ping
 		
 		-- Target intercept prediction
