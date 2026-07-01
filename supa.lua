@@ -1,207 +1,216 @@
--- LocalScript (StarterPlayer > StarterPlayerScripts)
+-- LocalScript (put in StarterPlayer > StarterPlayerScripts)
+-- Missile Lock / Target Selector Script
+
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
-local ESP_ENABLED = false
-local targetPlayerName = nil
+local TARGET = nil  -- This is the selected target (Player object)
 
-local espObjects = {}  -- character -> data
+-- Settings
+local BOX_COLOR = Color3.fromRGB(255, 50, 50)
+local BOX_THICKNESS = 3
+local BOX_SIZE_OFFSET = Vector2.new(80, 120)  -- Base size around character
+local UPDATE_RATE = 1 / 30  -- How often to update box positions
 
+-- GUI Setup
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ESPController"
+screenGui.Name = "MissileLockGui"
 screenGui.ResetOnSpawn = false
-screenGui.Parent = player:WaitForChild("PlayerGui")
-
--- Toggle GUI
-local toggleFrame = Instance.new("Frame")
-toggleFrame.Size = UDim2.new(0, 220, 0, 70)
-toggleFrame.Position = UDim2.new(0, 20, 0, 20)
-toggleFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-toggleFrame.BorderSizePixel = 0
-toggleFrame.Parent = screenGui
-
-Instance.new("UICorner", toggleFrame).CornerRadius = UDim.new(0, 10)
+screenGui.Parent = game.CoreGui
 
 local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(1, -20, 1, -20)
-toggleButton.Position = UDim2.new(0, 10, 0, 10)
-toggleButton.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
-toggleButton.Text = "ESP: OFF"
-toggleButton.TextColor3 = Color3.new(1,1,1)
+toggleButton.Size = UDim2.new(0, 180, 0, 50)
+toggleButton.Position = UDim2.new(0, 20, 0, 20)
+toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Text = "Missile Lock: OFF"
 toggleButton.TextScaled = true
 toggleButton.Font = Enum.Font.GothamBold
-toggleButton.Parent = toggleFrame
+toggleButton.Parent = screenGui
 
-Instance.new("UICorner", toggleButton).CornerRadius = UDim.new(0, 8)
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(0, 250, 0, 30)
+statusLabel.Position = UDim2.new(0, 20, 0, 80)
+statusLabel.BackgroundTransparency = 1
+statusLabel.TextColor3 = Color3.fromRGB(255, 200, 50)
+statusLabel.Text = "No Target"
+statusLabel.TextScaled = true
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.Parent = screenGui
 
-local function createESP(character)
-    if espObjects[character] then return end
-    if not character:FindFirstChild("HumanoidRootPart") then return end
+-- Store active lock boxes
+local activeBoxes = {}  -- [player] = {billboard, frame, cornerFrames...}
 
-    print("Creating ESP for: " .. character.Name)
+local enabled = false
 
-    -- 3D Highlight
-    local highlight = Instance.new("Highlight")
-    highlight.Adornee = character
-    highlight.FillTransparency = 1
-    highlight.OutlineColor = Color3.fromRGB(0, 255, 0)
-    highlight.OutlineTransparency = 0
-    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    highlight.Parent = character
-
-    -- Name Label (fixed size)
-    local billboard = Instance.new("BillboardGui")
-    billboard.Adornee = character:FindFirstChild("Head") or character.HumanoidRootPart
-    billboard.Size = UDim2.new(0, 160, 0, 45)
-    billboard.StudsOffset = Vector3.new(0, 3.5, 0)
-    billboard.AlwaysOnTop = true
-    billboard.Parent = character
-
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1,0,1,0)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.Text = character.Name
-    nameLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-    nameLabel.TextScaled = false
-    nameLabel.TextSize = 18
-    nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.TextStrokeTransparency = 0
-    nameLabel.TextStrokeColor3 = Color3.new(0,0,0)
-    nameLabel.Parent = billboard
-
-    -- Clickable Missile Lock Square (Green Corners)
-    local screenBox = Instance.new("Frame")
-    screenBox.Name = "TargetBox"
-    screenBox.BackgroundTransparency = 1
-    screenBox.Size = UDim2.new(0, 90, 0, 90)
-    screenBox.Visible = false
-    screenBox.Parent = screenGui
-
-    -- Green corner brackets
-    local function createCorner(pos, sizeX, sizeY)
-        local corner = Instance.new("Frame")
-        corner.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        corner.BorderSizePixel = 0
-        corner.Size = UDim2.new(0, sizeX, 0, sizeY)
-        corner.Parent = screenBox
-        return corner
+-- Create lock box for a character
+local function createLockBox(character)
+    if not character or not character:FindFirstChild("HumanoidRootPart") then
+        return
     end
-
-    local tl = createCorner("TopLeft", 25, 3)
-    local tr = createCorner("TopRight", 25, 3)
-    local bl = createCorner("BottomLeft", 25, 3)
-    local br = createCorner("BottomRight", 25, 3)
-
-    tl.Position = UDim2.new(0, 0, 0, 0)
-    tr.Position = UDim2.new(1, -25, 0, 0)
-    bl.Position = UDim2.new(0, 0, 1, -3)
-    br.Position = UDim2.new(1, -25, 1, -3)
-
-    -- Click detection
-    screenBox.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            targetPlayerName = character.Name
-            print("Target locked: " .. targetPlayerName)
-        end
-    end)
-
-    espObjects[character] = {
-        Highlight = highlight,
-        Billboard = billboard,
-        ScreenBox = screenBox
+    
+    local root = character.HumanoidRootPart
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    -- BillboardGui
+    local billboard = Instance.new("BillboardGui")
+    billboard.Adornee = root
+    billboard.Size = UDim2.new(0, 300, 0, 400)  -- Large enough area
+    billboard.StudsOffset = Vector3.new(0, 2, 0)
+    billboard.AlwaysOnTop = true
+    billboard.LightInfluence = 0
+    billboard.Parent = character
+    
+    -- Main transparent frame for click detection
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = UDim2.new(1, 0, 1, 0)
+    mainFrame.BackgroundTransparency = 1
+    mainFrame.Parent = billboard
+    
+    -- Corner brackets (classic missile lock look)
+    local corners = {}
+    local cornerPositions = {
+        {0, 0}, {1, 0}, {0, 1}, {1, 1}  -- top-left, top-right, bottom-left, bottom-right
+    }
+    
+    for _, pos in ipairs(cornerPositions) do
+        local corner = Instance.new("Frame")
+        corner.BackgroundColor3 = BOX_COLOR
+        corner.BorderSizePixel = 0
+        corner.Size = UDim2.new(0, 40, 0, BOX_THICKNESS)
+        corner.Position = UDim2.new(pos[1], pos[1] == 1 and -40 or 0, pos[2], pos[2] == 1 and -BOX_THICKNESS or 0)
+        corner.Parent = mainFrame
+        table.insert(corners, corner)
+        
+        -- Vertical part
+        local vert = Instance.new("Frame")
+        vert.BackgroundColor3 = BOX_COLOR
+        vert.BorderSizePixel = 0
+        vert.Size = UDim2.new(0, BOX_THICKNESS, 0, 40)
+        vert.Position = UDim2.new(pos[1], pos[1] == 1 and -BOX_THICKNESS or 0, pos[2], pos[2] == 1 and -40 or 0)
+        vert.Parent = mainFrame
+        table.insert(corners, vert)
+    end
+    
+    activeBoxes[character] = {
+        billboard = billboard,
+        mainFrame = mainFrame,
+        corners = corners,
+        player = Players:GetPlayerFromCharacter(character)
     }
 end
 
-local function removeESP(character)
-    local data = espObjects[character]
-    if data then
-        data.Highlight:Destroy()
-        data.Billboard:Destroy()
-        data.ScreenBox:Destroy()
-        espObjects[character] = nil
+-- Remove box
+local function removeLockBox(character)
+    if activeBoxes[character] then
+        activeBoxes[character].billboard:Destroy()
+        activeBoxes[character] = nil
     end
 end
 
-local function updateScreenBoxes()
-    for character, data in pairs(espObjects) do
-        if character and character.Parent and character:FindFirstChild("HumanoidRootPart") then
-            local root = character.HumanoidRootPart
-            local screenPos, onScreen = camera:WorldToViewportPoint(root.Position)
-            
-            if onScreen then
-                data.ScreenBox.Visible = true
-                data.ScreenBox.Position = UDim2.new(0, screenPos.X - 45, 0, screenPos.Y - 45)
-            else
-                data.ScreenBox.Visible = false
-            end
-        else
-            removeESP(character)
+-- Update all boxes
+local function updateBoxes()
+    for character, data in pairs(activeBoxes) do
+        if not character.Parent then
+            removeLockBox(character)
         end
     end
 end
 
-local function refreshAllESP()
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= player and plr.Character then
-            createESP(plr.Character)
-        end
-    end
-end
-
-local function toggleESP()
-    ESP_ENABLED = not ESP_ENABLED
+-- Toggle function
+local function toggleLock()
+    enabled = not enabled
     
-    if ESP_ENABLED then
-        toggleButton.Text = "ESP: ON"
-        toggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-        refreshAllESP()
-        print("ESP Enabled")
-    else
-        toggleButton.Text = "ESP: OFF"
-        toggleButton.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+    if enabled then
+        toggleButton.Text = "Missile Lock: ON"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
         
-        for char in pairs(espObjects) do
-            removeESP(char)
+        -- Create boxes for existing characters
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= player and plr.Character then
+                createLockBox(plr.Character)
+            end
         end
-        print("ESP Disabled")
+        
+        -- Listen for new characters
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= player then
+                plr.CharacterAdded:Connect(function(char)
+                    if enabled then
+                        createLockBox(char)
+                    end
+                end)
+            end
+        end
+    else
+        toggleButton.Text = "Missile Lock: OFF"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        
+        -- Remove all boxes
+        for char, _ in pairs(activeBoxes) do
+            removeLockBox(char)
+        end
+        activeBoxes = {}
     end
 end
 
--- Connections
-toggleButton.MouseButton1Click:Connect(toggleESP)
+toggleButton.MouseButton1Click:Connect(toggleLock)
 
--- Player & Character handling
-Players.PlayerAdded:Connect(function(plr)
-    plr.CharacterAdded:Connect(function(char)
-        if ESP_ENABLED then
-            task.wait(0.8)
-            createESP(char)
+-- Click detection
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not enabled or gameProcessed then return end
+    if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+    
+    local mousePos = UserInputService:GetMouseLocation()
+    
+    for character, data in pairs(activeBoxes) do
+        if data.mainFrame and data.mainFrame.AbsolutePosition and data.mainFrame.AbsoluteSize then
+            local absPos = data.mainFrame.AbsolutePosition
+            local absSize = data.mainFrame.AbsoluteSize
+            
+            if mousePos.X >= absPos.X and mousePos.X <= absPos.X + absSize.X and
+               mousePos.Y >= absPos.Y and mousePos.Y <= absPos.Y + absSize.Y then
+                
+                -- Clicked inside this box!
+                TARGET = data.player
+                statusLabel.Text = "TARGET: " .. (TARGET and TARGET.Name or "None")
+                print("Target locked: " .. (TARGET and TARGET.Name or "None"))
+                
+                -- Optional: Visual feedback
+                for _, corner in ipairs(data.corners or {}) do
+                    corner.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
+                end
+                wait(0.2)
+                if data.corners then
+                    for _, corner in ipairs(data.corners) do
+                        if corner then corner.BackgroundColor3 = BOX_COLOR end
+                    end
+                end
+                return
+            end
         end
-    end)
+    end
 end)
 
-for _, plr in ipairs(Players:GetPlayers()) do
-    if plr ~= player then
-        if plr.Character then createESP(plr.Character) end
-        plr.CharacterAdded:Connect(function(char)
-            if ESP_ENABLED then
-                task.wait(0.8)
-                createESP(char)
-            end
-        end)
+-- Character cleanup
+Players.PlayerRemoving:Connect(function(plr)
+    for char, data in pairs(activeBoxes) do
+        if data.player == plr then
+            removeLockBox(char)
+        end
     end
-end
+end)
 
 -- Main update loop
 RunService.RenderStepped:Connect(function()
-    if ESP_ENABLED then
-        updateScreenBoxes()
+    if enabled then
+        updateBoxes()
     end
 end)
 
-print("Missile Lock ESP script loaded!")
-print("Toggle with the button. Click the green corner squares to select target.")
+print("Missile Lock script loaded! Click the button to toggle.")
