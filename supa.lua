@@ -1,194 +1,201 @@
--- LocalScript (Place in StarterPlayer > StarterPlayerScripts)
+-- LocalScript → StarterPlayerScripts
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local StarterGui = game:GetService("StarterGui")
 
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
--- Configuration
-local ESP_COLOR = Color3.fromRGB(0, 255, 0) -- Green
 local ESP_ENABLED = false
-local selectedPlayerName = nil  -- The variable that will hold the clicked player's name
+local targetPlayerName = nil  -- ← Your target variable
 
--- Store highlights and billboards
-local espObjects = {}
+local espObjects = {}  -- character -> {Highlight, Billboard, ScreenBox}
 
--- Create GUI
+-- GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ESPController"
 screenGui.ResetOnSpawn = false
-screenGui.Parent = game.CoreGui
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
+-- Toggle Button
 local toggleFrame = Instance.new("Frame")
-toggleFrame.Size = UDim2.new(0, 200, 0, 60)
+toggleFrame.Size = UDim2.new(0, 220, 0, 70)
 toggleFrame.Position = UDim2.new(0, 20, 0, 20)
-toggleFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+toggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 toggleFrame.BorderSizePixel = 0
 toggleFrame.Parent = screenGui
 
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 8)
-corner.Parent = toggleFrame
+Instance.new("UICorner", toggleFrame).CornerRadius = UDim.new(0, 10)
 
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(1, -20, 1, -20)
 toggleButton.Position = UDim2.new(0, 10, 0, 10)
 toggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
 toggleButton.Text = "ESP: OFF"
-toggleButton.TextColor3 = Color3.new(1, 1, 1)
+toggleButton.TextColor3 = Color3.new(1,1,1)
 toggleButton.TextScaled = true
 toggleButton.Font = Enum.Font.GothamBold
 toggleButton.Parent = toggleFrame
 
-local toggleCorner = Instance.new("UICorner")
-toggleCorner.CornerRadius = UDim.new(0, 6)
-toggleCorner.Parent = toggleButton
+Instance.new("UICorner", toggleButton).CornerRadius = UDim.new(0, 8)
 
--- Function to create ESP for a character
+-- Create missile-lock style square around player
 local function createESP(character)
     if espObjects[character] then return end
-    
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
-    if not rootPart then return end
-    
-    -- Highlight for hollow green box
+
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    -- 3D Highlight (green hollow box)
     local highlight = Instance.new("Highlight")
-    highlight.Name = "ESPHighlight"
     highlight.Adornee = character
-    highlight.FillTransparency = 1 -- Hollow
-    highlight.OutlineColor = ESP_COLOR
+    highlight.FillTransparency = 1
+    highlight.OutlineColor = Color3.fromRGB(0, 255, 0)
     highlight.OutlineTransparency = 0
     highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     highlight.Parent = character
-    
-    -- Name label (BillboardGui)
+
+    -- Fixed size name label
     local billboard = Instance.new("BillboardGui")
-    billboard.Name = "ESPNameLabel"
-    billboard.Adornee = character:FindFirstChild("Head") or rootPart
-    billboard.Size = UDim2.new(0, 200, 0, 50)
-    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.Adornee = character:FindFirstChild("Head") or root
+    billboard.Size = UDim2.new(0, 160, 0, 45)
+    billboard.StudsOffset = Vector3.new(0, 3.5, 0)
     billboard.AlwaysOnTop = true
-    billboard.LightInfluence = 0
     billboard.Parent = character
-    
+
     local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, 0, 1, 0)
+    nameLabel.Size = UDim2.new(1,0,1,0)
     nameLabel.BackgroundTransparency = 1
     nameLabel.Text = character.Name
-    nameLabel.TextColor3 = ESP_COLOR
-    nameLabel.TextScaled = true
+    nameLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+    nameLabel.TextScaled = false
+    nameLabel.TextSize = 18
     nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextStrokeTransparency = 0
+    nameLabel.TextStrokeColor3 = Color3.new(0,0,0)
     nameLabel.Parent = billboard
-    
-    espObjects[character] = {Highlight = highlight, Billboard = billboard}
+
+    -- Clickable Screen Box (Missile Lock Style)
+    local screenBox = Instance.new("Frame")
+    screenBox.Name = "TargetBox"
+    screenBox.BackgroundTransparency = 1
+    screenBox.Size = UDim2.new(0, 80, 0, 80)
+    screenBox.Parent = screenGui
+
+    -- Green corner brackets (classic missile lock look)
+    local corners = {}
+    for _, pos in ipairs({"TopLeft", "TopRight", "BottomLeft", "BottomRight"}) do
+        local corner = Instance.new("Frame")
+        corner.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        corner.BorderSizePixel = 0
+        corner.Size = UDim2.new(0, 12, 0, 2)
+        corner.Parent = screenBox
+
+        if pos == "TopLeft" then
+            corner.Position = UDim2.new(0, 0, 0, 0)
+            corner.Size = UDim2.new(0, 20, 0, 3)
+        elseif pos == "TopRight" then
+            corner.Position = UDim2.new(1, -20, 0, 0)
+            corner.Size = UDim2.new(0, 20, 0, 3)
+        elseif pos == "BottomLeft" then
+            corner.Position = UDim2.new(0, 0, 1, -3)
+            corner.Size = UDim2.new(0, 20, 0, 3)
+        elseif pos == "BottomRight" then
+            corner.Position = UDim2.new(1, -20, 1, -3)
+            corner.Size = UDim2.new(0, 20, 0, 3)
+        end
+        corners[pos] = corner
+    end
+
+    -- Make the whole box clickable
+    screenBox.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            targetPlayerName = character.Name
+            print("Target locked: " .. targetPlayerName)
+        end
+    end)
+
+    espObjects[character] = {
+        Highlight = highlight,
+        Billboard = billboard,
+        ScreenBox = screenBox,
+        Corners = corners
+    }
 end
 
--- Remove ESP from character
 local function removeESP(character)
-    if espObjects[character] then
-        espObjects[character].Highlight:Destroy()
-        espObjects[character].Billboard:Destroy()
+    local data = espObjects[character]
+    if data then
+        data.Highlight:Destroy()
+        data.Billboard:Destroy()
+        data.ScreenBox:Destroy()
         espObjects[character] = nil
     end
 end
 
--- Update ESP for all players
-local function updateESP()
+local function updateScreenBoxes()
     if not ESP_ENABLED then return end
-    
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= player and plr.Character then
-            createESP(plr.Character)
+
+    for character, data in pairs(espObjects) do
+        if character and character.Parent then
+            local root = character:FindFirstChild("HumanoidRootPart")
+            if root then
+                local screenPos, onScreen = camera:WorldToViewportPoint(root.Position)
+                
+                if onScreen then
+                    data.ScreenBox.Visible = true
+                    data.ScreenBox.Position = UDim2.new(0, screenPos.X - 40, 0, screenPos.Y - 40)
+                else
+                    data.ScreenBox.Visible = false
+                end
+            end
+        else
+            removeESP(character)
         end
     end
 end
 
--- Toggle function
 local function toggleESP()
     ESP_ENABLED = not ESP_ENABLED
     
     if ESP_ENABLED then
         toggleButton.Text = "ESP: ON"
         toggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-        updateESP()
     else
         toggleButton.Text = "ESP: OFF"
         toggleButton.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
         
-        -- Remove all ESP
-        for char, _ in pairs(espObjects) do
+        for char in pairs(espObjects) do
             removeESP(char)
         end
-        espObjects = {}
     end
 end
 
--- Click detection (Raycast to character)
-local function onMouseClick()
-    if not ESP_ENABLED then return end
-    
-    local mouse = player:GetMouse()
-    local ray = camera:ScreenPointToRay(mouse.X, mouse.Y)
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterDescendantsInstances = {player.Character}
-    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-    
-    local result = workspace:Raycast(ray.Origin, ray.Direction * 500, raycastParams)
-    
-    if result and result.Instance then
-        local character = result.Instance:FindFirstAncestorWhichIsA("Model")
-        if character and Players:GetPlayerFromCharacter(character) then
-            local targetPlayer = Players:GetPlayerFromCharacter(character)
-            if targetPlayer then
-                selectedPlayerName = targetPlayer.Name
-                print("Selected player: " .. selectedPlayerName)
-                -- You can fire a RemoteEvent here or use the variable anywhere else in your script
-            end
-        end
-    end
-end
-
--- Connect toggle
+-- Connections
 toggleButton.MouseButton1Click:Connect(toggleESP)
 
--- Mouse click for selection
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        onMouseClick()
+-- Character handling
+local function onCharacterAdded(char)
+    if ESP_ENABLED then
+        task.wait(0.6)
+        createESP(char)
     end
-end)
-
--- Handle new players / character added
-Players.PlayerAdded:Connect(function(plr)
-    plr.CharacterAdded:Connect(function(char)
-        if ESP_ENABLED then
-            task.wait(0.5) -- Small delay for character to load
-            createESP(char)
-        end
-    end)
-end)
-
--- Initial players
-for _, plr in ipairs(Players:GetPlayers()) do
-    if plr ~= player and plr.Character then
-        createESP(plr.Character)
-    end
-    plr.CharacterAdded:Connect(function(char)
-        if ESP_ENABLED then
-            task.wait(0.5)
-            createESP(char)
-        end
-    end)
 end
 
--- Periodic update
-RunService.Heartbeat:Connect(function()
-    if ESP_ENABLED then
-        updateESP()
-    end
+Players.PlayerAdded:Connect(function(plr)
+    plr.CharacterAdded:Connect(onCharacterAdded)
 end)
 
-print("ESP Script loaded! Toggle with the GUI button. Click on a green box to select a player.")
+for _, plr in ipairs(Players:GetPlayers()) do
+    if plr ~= player then
+        if plr.Character then
+            createESP(plr.Character)
+        end
+        plr.CharacterAdded:Connect(onCharacterAdded)
+    end
+end
+
+-- Main loop
+RunService.RenderStepped:Connect(updateScreenBoxes)
+
+print("Missile Lock ESP loaded! Click the green squares to lock target.")
