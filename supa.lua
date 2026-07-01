@@ -6,9 +6,9 @@ local localPlayer = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
 -- ==========================================
--- 1. UI CREATION
+-- 1. UI CREATION (Same as before)
 -- ==========================================
-local playerGui = game.CoreGui
+local playerGui = localPlayer:WaitForChild("PlayerGui")
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MissileLockSystem"
 screenGui.ResetOnSpawn = false
@@ -47,7 +47,7 @@ boxContainer.BackgroundTransparency = 1
 boxContainer.Parent = screenGui
 
 -- ==========================================
--- 2. LOGIC
+-- 2. LOGIC & RAYCASTING
 -- ==========================================
 local isTargeting = false
 local targetPlayer = nil
@@ -69,7 +69,7 @@ local function createLockBox(player)
 	return frame
 end
 
--- Render loop: Updates box positions
+-- Render loop for boxes
 local renderConnection = RunService.RenderStepped:Connect(function()
 	if not isTargeting then 
 		for _, box in pairs(activeBoxes) do box.Visible = false end
@@ -80,7 +80,6 @@ local renderConnection = RunService.RenderStepped:Connect(function()
 		if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
 			local screenPos, onScreen = camera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position + Vector3.new(0, 1, 0))
 			local box = activeBoxes[player] or createLockBox(player)
-			
 			box.Visible = onScreen
 			if onScreen then
 				box.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
@@ -107,35 +106,35 @@ toggleButton.MouseButton1Click:Connect(function()
 	toggleButton.BackgroundColor3 = isTargeting and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 50)
 end)
 
--- CLICK LOGIC: Check if mouse is inside the box's area
+-- FIXED: Click-to-Lock using Raycasting
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed or not isTargeting or input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
 	
 	local mousePos = UserInputService:GetMouseLocation()
-	local found = false
+	local unitRay = camera:ViewportPointToRay(mousePos.X, mousePos.Y)
 	
-	for player, box in pairs(activeBoxes) do
-		if box.Visible then
-			-- Calculate the distance between mouse and center of the box
-			local boxCenter = Vector2.new(box.AbsolutePosition.X + box.AbsoluteSize.X/2, box.AbsolutePosition.Y + box.AbsoluteSize.Y/2)
-			local dist = (mousePos - boxCenter).Magnitude
-			
-			-- If click is within 40 pixels of the box center, select it
-			if dist < 40 then
-				targetPlayer = player
-				targetLabel.Text = "LOCKED ON: " .. string.upper(targetPlayer.Name)
-				found = true
-				break
-			end
+	-- Setup Raycast to ignore YOUR character
+	local raycastParams = RaycastParams.new()
+	raycastParams.FilterDescendantsInstances = {localPlayer.Character}
+	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+	
+	local raycastResult = workspace:Raycast(unitRay.Origin, unitRay.Direction * 1000, raycastParams)
+	
+	if raycastResult and raycastResult.Instance then
+		local character = raycastResult.Instance:FindFirstAncestorOfClass("Model")
+		local foundPlayer = character and Players:GetPlayerFromCharacter(character)
+		
+		if foundPlayer and foundPlayer ~= localPlayer then
+			targetPlayer = foundPlayer
+			targetLabel.Text = "LOCKED ON: " .. string.upper(targetPlayer.Name)
+		else
+			targetPlayer = nil
+			targetLabel.Text = "NO TARGET LOCKED"
 		end
-	end
-	
-	if not found then
-		targetPlayer = nil
-		targetLabel.Text = "NO TARGET LOCKED"
 	end
 end)
 
+-- Destroy System
 destroyButton.MouseButton1Click:Connect(function()
 	for _, c in ipairs(connections) do c:Disconnect() end
 	screenGui:Destroy()
