@@ -333,7 +333,7 @@ mainheart = RunService.RenderStepped:Connect(function(dt)
 		-- 3. FIX: Dynamic Detonation Distance
 		-- At 800 speed, a fixed 20 studs is cleared instantly. 
 		-- We scale the detonation distance slightly based on latency and speed.
-		local dynamicDetonateRadius = 22 + (closingSpeed * totalLatency * 0.4)
+		local dynamicDetonateRadius = 12 + (closingSpeed * totalLatency * 0.4)
 		
 		if dist < dynamicDetonateRadius then
 			isDetonating = true 
