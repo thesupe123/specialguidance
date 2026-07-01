@@ -289,8 +289,8 @@ mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 	if launch and target ~= nil then
 		local targetvelocity = target.Velocity --sps
 	    local missilevelocity = missile.Velocity --sps
-		local targetacceleration = Vector3.new(0,0,0)
-		local missileacceleration = Vector3.new(0,0,0)
+		local targetacceleration = (targetvelocity-targetlastvelocity)/dt
+		local missileacceleration = (missilevelocity-missilelastvelocity)/dt
 		if missilevelocity.Magnitude < 1 then
 			missilevelocity = Vector3.new(0,1,0)
 		end
