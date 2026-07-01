@@ -279,50 +279,47 @@ local missilelastvelocity = Vector3.new(0,0,0)
 local localplayer = game:GetService("Players").LocalPlayer
 local target = nil
 local missile = nil
-local speed = 1000
+local speed = 800
 
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local RunService = game:GetService("RunService")
 
-local isDetonating = false -- Debounce to prevent double-firing
-local mainheart -- Declare variable upward so it can reference itself to disconnect
+local isDetonating = false -- Temporary lock during the 0.1s keypress
 
 mainheart = RunService.RenderStepped:Connect(function(dt)
-	-- Target validation
+	-- Continuous target/missile tracking verification
 	if targetPlayer and targetPlayer.Character then
 		target = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 		
 		local aircraft = game.Workspace:FindFirstChild(localplayer.Name.." Aircraft")
 		if aircraft and aircraft:FindFirstChild("ExplosiveBlock") then
 			missile = aircraft.ExplosiveBlock.Decorate
+		else
+			missile = nil -- Clear reference if aircraft/missile doesn't exist yet
 		end
 	end
 	
-	-- Only run guidance if everything exists and we aren't already exploding
+	-- Only run if launch is active, objects exist, and it isn't currently exploding
 	if launch and target ~= nil and missile ~= nil and not isDetonating then
-		-- Modern Roblox property update (Velocity is deprecated)
 		local targetvelocity = target.AssemblyLinearVelocity 
 		local missilevelocity = missile.AssemblyLinearVelocity 
 		
 		local targetacceleration = Vector3.new(0,0,0)
-		
 		local displacement = target.Position - missile.Position
 		local dist = displacement.Magnitude
 		
-		-- Fix: Calculate Closing Velocity so 'timetotarget' is accurate
-		-- This figures out if the target is flying away or towards the missile
+		-- Closing velocity algorithm
 		local missileDir = displacement.Unit
 		local closingSpeed = speed - targetvelocity:Dot(missileDir)
-		if closingSpeed <= 0 then closingSpeed = speed end -- Fallback
+		if closingSpeed <= 0 then closingSpeed = speed end 
 		
 		local timetotarget = dist / closingSpeed
 		local ping = localplayer:GetNetworkPing() / 2
 		local totaltime = timetotarget + ping
 		
-		-- Kinematic prediction
+		-- Target intercept prediction
 		local calculatedtargetpos = target.Position + (targetvelocity * totaltime) + (0.5 * targetacceleration * (totaltime^2))
 		
-		-- Update your indicator part safely
 		if predictedPart then
 			predictedPart.Position = calculatedtargetpos
 		end
@@ -335,19 +332,25 @@ mainheart = RunService.RenderStepped:Connect(function(dt)
 		missile.AssemblyLinearVelocity = direction * speed
 		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
 		
-		-- Detonation Logic (Checks actual distance to target part for consistency)
-		if (missile.Position - target.Position).Magnitude < 15 then
-			isDetonating = true -- Lock the loop immediately
-			-- Fire the keypress safely in a separate thread
+		-- Detonation Trigger
+		if (missile.Position - target.Position).Magnitude < 20 then
+			isDetonating = true 
+			launch = false -- 1. Immediately turn off guidance so it stops tracking
+			
+			-- 2. Run detonation keypress safely in the background
 			task.spawn(function()
 				print("DETONATE")
 				VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
 				task.wait(0.1)
 				VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+				
+				-- 3. Reset states so the system is completely ready for the next missile
+				target = nil
+				missile = nil
+				isDetonating = false 
 			end)
 		end
 	end
 end)
-
 
 
