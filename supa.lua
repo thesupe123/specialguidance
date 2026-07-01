@@ -336,7 +336,7 @@ mainheart = RunService.RenderStepped:Connect(function(dt)
 		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
 		
 		-- Detonation Logic (Checks actual distance to target part for consistency)
-		if (missile.Position - target.Position).Magnitude < 20 then
+		if (missile.Position - target.Position).Magnitude < 15 then
 			isDetonating = true -- Lock the loop immediately
 			mainheart:Disconnect() -- Stop tracking entirely
 			
