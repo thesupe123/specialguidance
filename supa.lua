@@ -9,11 +9,13 @@ local camera = workspace.CurrentCamera
 -- ==========================================
 -- 1. UI CREATION
 -- ==========================================
-local playerGui = localPlayer:WaitForChild("PlayerGui")
+local playerGui = game.CoreGui
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MissileLockSystem"
 screenGui.ResetOnSpawn = false
+-- THIS FIXES THE BOXES APPEARING BELOW THE PLAYER:
+screenGui.IgnoreGuiInset = true 
 screenGui.Parent = playerGui
 
 -- Targeting Button (Top Left)
@@ -58,7 +60,7 @@ targetLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
 targetLabel.Font = Enum.Font.GothamBlack
 targetLabel.TextScaled = true
 targetLabel.Text = "NO TARGET LOCKED"
-targetLabel.TextStrokeTransparency = 0 -- Adds a black outline to the text
+targetLabel.TextStrokeTransparency = 0 
 targetLabel.Parent = screenGui
 
 -- Container for the 2D Lock Boxes
@@ -73,8 +75,8 @@ boxContainer.Parent = screenGui
 -- ==========================================
 local isTargeting = false
 local targetPlayer = nil
-local activeBoxes = {} -- Dictionary tracking Player -> UI Frame
-local connections = {} -- Stores event connections so we can clean them up
+local activeBoxes = {} 
+local connections = {} 
 
 -- ==========================================
 -- 3. CORE LOGIC & MATH
@@ -85,7 +87,7 @@ local function createLockBox(player)
 	local frame = Instance.new("Frame")
 	frame.Name = player.Name .. "_LockBox"
 	frame.Size = UDim2.new(0, 50, 0, 50)
-	frame.AnchorPoint = Vector2.new(0.5, 0.5) -- Centers the frame on the coordinate
+	frame.AnchorPoint = Vector2.new(0.5, 0.5) 
 	frame.BackgroundTransparency = 1
 	frame.Parent = boxContainer
 
@@ -101,7 +103,6 @@ end
 -- Render loop: Calculates 3D to 2D math every single frame
 local renderConnection = RunService.RenderStepped:Connect(function()
 	if not isTargeting then 
-		-- Hide all boxes if we aren't targeting
 		for _, box in pairs(activeBoxes) do
 			box.Visible = false
 		end
@@ -112,34 +113,35 @@ local renderConnection = RunService.RenderStepped:Connect(function()
 		if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
 			local rootPart = player.Character.HumanoidRootPart
 			
-			-- MATH: Convert 3D world position to 2D screen coordinates
-			local screenPosition, onScreen = camera:WorldToViewportPoint(rootPart.Position)
+			-- Shift the tracking point slightly up so it frames the upper body
+			local targetPosition = rootPart.Position + Vector3.new(0, 1, 0)
 			
-			-- Get or create the UI box for this player
+			-- MATH: Convert 3D world position to 2D screen coordinates
+			local screenPosition, onScreen = camera:WorldToViewportPoint(targetPosition)
+			
 			local box = activeBoxes[player] or createLockBox(player)
 			
 			if onScreen then
 				box.Visible = true
 				box.Position = UDim2.new(0, screenPosition.X, 0, screenPosition.Y)
 				
-				-- Handle colors depending on if they are the locked target
+				-- Color updating logic
 				local stroke = box:FindFirstChildOfClass("UIStroke")
 				if stroke then
 					if player == targetPlayer then
-						stroke.Color = Color3.fromRGB(255, 0, 0) -- Red
+						stroke.Color = Color3.fromRGB(255, 0, 0) -- RED for target
 						stroke.Thickness = 3
-						box.Size = UDim2.new(0, 65, 0, 65) -- Make target box slightly bigger
+						box.Size = UDim2.new(0, 65, 0, 65) 
 					else
-						stroke.Color = Color3.fromRGB(0, 255, 0) -- Green
+						stroke.Color = Color3.fromRGB(0, 255, 0) -- GREEN for others
 						stroke.Thickness = 2
 						box.Size = UDim2.new(0, 50, 0, 50)
 					end
 				end
 			else
-				box.Visible = false -- Hide if they are behind the camera
+				box.Visible = false 
 			end
 		else
-			-- If the player loses their character, hide the box
 			if activeBoxes[player] then
 				activeBoxes[player].Visible = false
 			end
@@ -164,28 +166,36 @@ local toggleConnection = toggleButton.MouseButton1Click:Connect(function()
 end)
 table.insert(connections, toggleConnection)
 
--- Click-to-Lock Logic
+-- Click-to-Lock Logic (IMPROVED)
 local clickConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed or not isTargeting then return end
 	
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		local clickedPart = mouse.Target
+		
 		if clickedPart then
-			local character = clickedPart:FindFirstAncestorOfClass("Model")
-			if character then
-				local clickedPlayer = Players:GetPlayerFromCharacter(character)
-				if clickedPlayer and clickedPlayer ~= localPlayer then
-					targetPlayer = clickedPlayer
-					targetLabel.Text = "LOCKED ON: " .. string.upper(targetPlayer.Name)
-					targetLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-				end
+			-- More robust detection: Search upwards to see if whatever we clicked
+			-- (like a hat or accessory) belongs to a player's character.
+			local current = clickedPart
+			local clickedPlayer = nil
+			
+			while current and current ~= workspace do
+				clickedPlayer = Players:GetPlayerFromCharacter(current)
+				if clickedPlayer then break end
+				current = current.Parent
+			end
+			
+			if clickedPlayer and clickedPlayer ~= localPlayer then
+				targetPlayer = clickedPlayer
+				targetLabel.Text = "LOCKED ON: " .. string.upper(targetPlayer.Name)
+				targetLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
 			end
 		end
 	end
 end)
 table.insert(connections, clickConnection)
 
--- Cleanup function when players leave so we don't leave dead UI frames behind
+-- Cleanup function when players leave
 local leaveConnection = Players.PlayerRemoving:Connect(function(player)
 	if activeBoxes[player] then
 		activeBoxes[player]:Destroy()
@@ -202,7 +212,6 @@ table.insert(connections, leaveConnection)
 -- 4. DESTROY GUI LOGIC
 -- ==========================================
 destroyButton.MouseButton1Click:Connect(function()
-	-- 1. Disconnect all background events so the script stops running memory
 	for _, connection in ipairs(connections) do
 		if connection.Connected then
 			connection:Disconnect()
@@ -210,7 +219,6 @@ destroyButton.MouseButton1Click:Connect(function()
 	end
 	table.clear(connections)
 	
-	-- 2. Destroy the GUI entirely
 	screenGui:Destroy()
 	print("Missile lock system destroyed.")
 end)
