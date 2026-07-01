@@ -279,7 +279,7 @@ local missilelastvelocity = Vector3.new(0,0,0)
 local localplayer = game:GetService("Players").LocalPlayer
 local target = nil
 local missile = nil
-local speed = 1500
+local speed = 800
 local VirtualInputManager = game:GetService("VirtualInputManager")
 mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 	if targetPlayer then
@@ -296,7 +296,7 @@ mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 		end
 		local dist = ((target.Position-missile.Position).Magnitude)
 		local timetotarget = dist/(missilevelocity.Magnitude) -- seconds
-		local ping = localplayer:GetNetworkPing() *( 1.3 * (targetvelocity.Magnitude / 800))
+		local ping = localplayer:GetNetworkPing() 
 	    local totaltime = timetotarget + ping
 		local calculatedtargetpos = target.Position + targetvelocity * totaltime + 0.5 * targetacceleration * totaltime^2
 		predictedPart.Position = calculatedtargetpos
