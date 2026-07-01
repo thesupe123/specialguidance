@@ -306,7 +306,6 @@ mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 		local direction = (calculatedtargetpos - missile.Position).Unit
 		missile.AssemblyLinearVelocity =  direction * speed
 		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
-		if (missile.Position-calculatedtargetpos).Magnitude < 16 then
 		if (missile.Position-calculatedtargetpos).Magnitude < 20 then
 			VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
 			task.wait(0.1)
@@ -315,3 +314,6 @@ mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 		end
 	end
 end)
+
+
+
