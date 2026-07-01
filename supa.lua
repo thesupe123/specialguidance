@@ -274,89 +274,44 @@ handles.Color3 = Color3.new(1, 1, 0) -- Bright yellow
 handles.Parent = workspace
 handles.Faces = Faces.new(Enum.NormalId.Top)
 
-local targetLastVelocity = Vector3.new(0, 0, 0)
-local missileLastVelocity = Vector3.new(0, 0, 0)
-local targetLastAccel = Vector3.new(0, 0, 0)
-local missileLastAccel = Vector3.new(0, 0, 0)
-
-local localPlayer = game:GetService("Players").LocalPlayer
+local targetlastvelocity = Vector3.new(0,0,0)
+local missilelastvelocity = Vector3.new(0,0,0)
+local localplayer = game:GetService("Players").LocalPlayer
 local target = nil
 local missile = nil
 local speed = 1500
-
 local VirtualInputManager = game:GetService("VirtualInputManager")
+mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
+	if targetPlayer then
+		target = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+		missile = game.Workspace[localplayer.Name.." Aircraft"].ExplosiveBlock.Decorate
+	end
+	if launch and target ~= nil then
+		local targetvelocity = target.Velocity --sps
+	    local missilevelocity = missile.Velocity --sps
+		local targetacceleration = Vector3.new(0,0,0)
+		local missileacceleration = Vector3.new(0,0,0)
+		if missilevelocity.Magnitude < 1 then
+			missilevelocity = Vector3.new(0,1,0)
+		end
+		local dist = ((target.Position-missile.Position).Magnitude)
+		local timetotarget = dist/(missilevelocity.Magnitude) -- seconds
+		local ping = localplayer:GetNetworkPing() *( 1.3 * (targetvelocity.Magnitude / 800))
+	    local totaltime = timetotarget + ping
+		local calculatedtargetpos = target.Position + targetvelocity * totaltime + 0.5 * targetacceleration * totaltime^2
+		predictedPart.Position = calculatedtargetpos
+		targetlastvelocity = targetvelocity
+		missilelastvelocity = missilevelocity
 
--- Smoothing parameters (tune these)
-local VELOCITY_SMOOTH_ALPHA = 0.35     -- higher = more responsive, lower = smoother
-local ACCEL_SMOOTH_ALPHA = 0.25        -- acceleration needs stronger smoothing
-local MAX_ACCEL = 300                  -- prevent insane spikes (units/s²)
-
-local mainHeart = game:GetService("RunService").RenderStepped:Connect(function(dt)
-    if targetPlayer then
-        target = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-        missile = workspace[localPlayer.Name .. " Aircraft"].ExplosiveBlock.Decorate
-    end
-
-    if not (launch and target and missile) then
-        return
-    end
-
-    local targetVelocity = target.Velocity
-    local missileVelocity = missile.Velocity
-
-    -- Prevent zero velocity
-    if missileVelocity.Magnitude < 1 then
-        missileVelocity = Vector3.new(0, 1, 0)
-    end
-
-    -- === NOISE-REDUCED ACCELERATION ===
-    local rawTargetAccel = (targetVelocity - targetLastVelocity) / dt
-    local rawMissileAccel = (missileVelocity - missileLastVelocity) / dt
-
-    -- Clamp raw acceleration
-    rawTargetAccel = rawTargetAccel:Clamp(-MAX_ACCEL, MAX_ACCEL)
-    rawMissileAccel = rawMissileAccel:Clamp(-MAX_ACCEL, MAX_ACCEL)
-
-    -- Exponential smoothing (low-pass filter)
-    local targetAccel = targetLastAccel:Lerp(rawTargetAccel, ACCEL_SMOOTH_ALPHA)
-    local missileAccel = missileLastAccel:Lerp(rawMissileAccel, ACCEL_SMOOTH_ALPHA)
-
-    -- Also smooth velocity for better stability
-    targetVelocity = targetLastVelocity:Lerp(targetVelocity, VELOCITY_SMOOTH_ALPHA)
-    missileVelocity = missileLastVelocity:Lerp(missileVelocity, VELOCITY_SMOOTH_ALPHA)
-
-    -- === PREDICTION ===
-    local dist = (target.Position - missile.Position).Magnitude
-    local timeToTarget = dist / missileVelocity.Magnitude
-
-    local ping = localPlayer:GetNetworkPing() * (1.3 * (targetVelocity.Magnitude / 800))
-    local totalTime = timeToTarget + ping
-
-    -- Quadratic prediction with smoothed acceleration
-    local calculatedTargetPos = target.Position 
-        + targetVelocity * totalTime 
-        + 0.5 * targetAccel * totalTime * totalTime
-
-    if predictedPart then
-        predictedPart.Position = calculatedTargetPos
-    end
-
-    -- Update history
-    targetLastVelocity = targetVelocity
-    missileLastVelocity = missileVelocity
-    targetLastAccel = targetAccel
-    missileLastAccel = missileAccel
-	local direction = (calculatedtargetpos - missile.Position).Unit
-	missile.AssemblyLinearVelocity =  direction * speed
-	missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
-	if (missile.Position-calculatedtargetpos).Magnitude < 20 then
-		VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-		task.wait(0.1)
-		VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-		print("DETONATE")
+		local direction = (calculatedtargetpos - missile.Position).Unit
+		missile.AssemblyLinearVelocity =  direction * speed
+		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
+		if (missile.Position-calculatedtargetpos).Magnitude < 16 then
+		if (missile.Position-calculatedtargetpos).Magnitude < 20 then
+			VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+			task.wait(0.1)
+			VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+			print("DETONATE")
+		end
 	end
 end)
-
-
-
-
