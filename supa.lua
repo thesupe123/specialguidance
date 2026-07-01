@@ -284,10 +284,10 @@ local speed = 800
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local RunService = game:GetService("RunService")
 
-local isDetonating = false 
-local smoothedTargetVelocity = Vector3.new(0,0,0)
+local isDetonating = false -- Temporary lock during the 0.1s keypress
 
 mainheart = RunService.RenderStepped:Connect(function(dt)
+	-- Continuous target/missile tracking verification
 	if targetPlayer and targetPlayer.Character then
 		target = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 		
@@ -295,58 +295,56 @@ mainheart = RunService.RenderStepped:Connect(function(dt)
 		if aircraft and aircraft:FindFirstChild("ExplosiveBlock") then
 			missile = aircraft.ExplosiveBlock.Decorate
 		else
-			missile = nil 
+			missile = nil -- Clear reference if aircraft/missile doesn't exist yet
 		end
 	end
 	
+	-- Only run if launch is active, objects exist, and it isn't currently exploding
 	if launch and target ~= nil and missile ~= nil and not isDetonating then
-		-- 1. FIX: Smooth out the humanoid velocity jitter (Linear Interpolation)
-		-- This prevents the missile from violently over-correcting when players turn
-		local rawVelocity = target.AssemblyLinearVelocity
-		smoothedTargetVelocity = smoothedTargetVelocity:Lerp(rawVelocity, 0.25)
+		local targetvelocity = target.AssemblyLinearVelocity 
+		local missilevelocity = missile.AssemblyLinearVelocity 
 		
+		local targetacceleration = Vector3.new(0,0,0)
 		local displacement = target.Position - missile.Position
 		local dist = displacement.Magnitude
 		
+		-- Closing velocity algorithm
 		local missileDir = displacement.Unit
-		local closingSpeed = speed - smoothedTargetVelocity:Dot(missileDir)
+		local closingSpeed = speed - targetvelocity:Dot(missileDir)
 		if closingSpeed <= 0 then closingSpeed = speed end 
 		
 		local timetotarget = dist / closingSpeed
-		
-		-- 2. FIX: Use FULL ping (RTT) to account for both your lag and target lag
-		local totalLatency = localplayer:GetNetworkPing() 
-		local totaltime = timetotarget + totalLatency
+		local ping = localplayer:GetNetworkPing() / 2
+		local totaltime = timetotarget + ping
 		
 		-- Target intercept prediction
-		local calculatedtargetpos = target.Position + (smoothedTargetVelocity * totaltime)
+		local calculatedtargetpos = target.Position + (targetvelocity * totaltime) + (0.5 * targetacceleration * (totaltime^2))
 		
 		if predictedPart then
 			predictedPart.Position = calculatedtargetpos
 		end
 		
+		targetlastvelocity = targetvelocity
+		missilelastvelocity = missilevelocity
+
 		-- Guidance updates
 		local direction = (calculatedtargetpos - missile.Position).Unit
 		missile.AssemblyLinearVelocity = direction * speed
 		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
 		
-		-- 3. FIX: Dynamic Detonation Distance
-		-- At 800 speed, a fixed 20 studs is cleared instantly. 
-		-- We scale the detonation distance slightly based on latency and speed.
-		local dynamicDetonateRadius = 1 + (closingSpeed * totalLatency * 0.4)
-		
-		if dist < dynamicDetonateRadius then
+		-- Detonation Trigger
+		if (missile.Position - target.Position).Magnitude < 20 then
 			isDetonating = true 
-			launch = false 
+			launch = false -- 1. Immediately turn off guidance so it stops tracking
 			
+			-- 2. Run detonation keypress safely in the background
 			task.spawn(function()
-				print("DETONATING AT DISTANCE: ", dist, " RADIUS: ", dynamicDetonateRadius)
-				-- Give VirtualInputManager a solid press duration so the engine registers it
+				print("DETONATE")
 				VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-				task.wait(0.05) -- Tiny hold time ensures the client registers the downstroke
+				task.wait(0.1)
 				VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
 				
-				task.wait(0.2)
+				-- 3. Reset states so the system is completely ready for the next missile
 				target = nil
 				missile = nil
 				isDetonating = false 
