@@ -11,10 +11,11 @@ local TARGET = nil
 
 -- Settings
 local BOX_COLOR = Color3.fromRGB(255, 50, 50)
+local SELECTED_COLOR = Color3.fromRGB(0, 255, 80)
 local BOX_THICKNESS = 4
-local BOX_WIDTH = 80
-local BOX_HEIGHT = 110
-local NAME_OFFSET = 25
+local BOX_WIDTH = 85
+local BOX_HEIGHT = 125
+local NAME_OFFSET = 28
 
 local enabled = false
 local activeBoxes = {}
@@ -22,7 +23,7 @@ local activeBoxes = {}
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MissileLockGui"
 screenGui.ResetOnSpawn = false
-screenGui.Parent = game.CoreGui
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(0, 180, 0, 50)
@@ -44,6 +45,13 @@ statusLabel.TextScaled = true
 statusLabel.Font = Enum.Font.Gotham
 statusLabel.Parent = screenGui
 
+local function updateBoxColor(data, isSelected)
+    local color = isSelected and SELECTED_COLOR or BOX_COLOR
+    for _, corner in ipairs(data.corners) do
+        corner.BackgroundColor3 = color
+    end
+end
+
 local function createLockBox(character)
     local plr = Players:GetPlayerFromCharacter(character)
     if not plr or plr == player then return end
@@ -55,7 +63,6 @@ local function createLockBox(character)
     box.Visible = false
     box.Parent = screenGui
     
-    -- Corner brackets (outward facing)
     local corners = {}
     local length = 35
     
@@ -88,7 +95,6 @@ local function createLockBox(character)
     table.insert(corners, blH); table.insert(corners, blV)
     table.insert(corners, brH); table.insert(corners, brV)
     
-    -- Player Name
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Size = UDim2.new(0, 180, 0, 28)
     nameLabel.BackgroundTransparency = 0.6
@@ -99,12 +105,14 @@ local function createLockBox(character)
     nameLabel.Font = Enum.Font.GothamBold
     nameLabel.Parent = screenGui
     
-    activeBoxes[character] = {
+    local data = {
         box = box,
         nameLabel = nameLabel,
         corners = corners,
         player = plr
     }
+    activeBoxes[character] = data
+    return data
 end
 
 local function removeLockBox(character)
@@ -128,17 +136,20 @@ local function updateBoxes()
             continue
         end
         
-        local root = character.HumanoidRootPart
-        local centerPos = root.Position + Vector3.new(0, 2.5, 0)
+        local root = character:FindFirstChild("HumanoidRootPart")
+        -- Better centering using HumanoidRootPart + small upward offset
+        local centerPos = root.Position + Vector3.new(0, 3, 0)
         
         local screenPos, visible = worldToScreen(centerPos)
         
         if visible then
             data.box.Position = UDim2.new(0, screenPos.X - BOX_WIDTH/2, 0, screenPos.Y - BOX_HEIGHT/2)
             data.box.Visible = true
-            
             data.nameLabel.Position = UDim2.new(0, screenPos.X - 90, 0, screenPos.Y - BOX_HEIGHT/2 - NAME_OFFSET)
             data.nameLabel.Visible = true
+            
+            -- Update color based on selection
+            updateBoxColor(data, TARGET == data.player)
         else
             data.box.Visible = false
             data.nameLabel.Visible = false
@@ -160,6 +171,8 @@ local function toggleLock()
     else
         toggleButton.Text = "Missile Lock: OFF"
         toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        TARGET = nil
+        statusLabel.Text = "No Target"
         
         for char in pairs(activeBoxes) do
             removeLockBox(char)
@@ -170,7 +183,7 @@ end
 
 toggleButton.MouseButton1Click:Connect(toggleLock)
 
--- Click detection (no green highlight)
+-- Click to select (turns box green and stays green)
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not enabled or gameProcessed or input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
     
@@ -186,6 +199,11 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
                 
                 TARGET = data.player
                 statusLabel.Text = "TARGET: " .. TARGET.Name
+                
+                -- Update all boxes immediately
+                for _, d in pairs(activeBoxes) do
+                    updateBoxColor(d, TARGET == d.player)
+                end
                 return
             end
         end
@@ -215,4 +233,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-print("Missile Lock script updated - no green highlight")
+print("Missile Lock - Centering improved + green on selected target")
