@@ -216,7 +216,7 @@ destroyButton.MouseButton1Click:Connect(function()
 	screenGui:Destroy()
 	mainheart:Disconnect()
 	if game.Workspace:FindFirstChild("PredictedPosition") then
-		game.Workspace.PredictedPart:Destroy()	
+		game.Workspace.PredictedPosition:Destroy()	
 	end
 end)
 
