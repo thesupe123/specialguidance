@@ -279,7 +279,7 @@ local missilelastvelocity = Vector3.new(0,0,0)
 local localplayer = game:GetService("Players").LocalPlayer
 local target = nil
 local missile = nil
-local speed = 500
+local speed = 800
 local VirtualInputManager = game:GetService("VirtualInputManager")
 mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 	if targetPlayer then
