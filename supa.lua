@@ -333,7 +333,7 @@ mainheart = RunService.RenderStepped:Connect(function(dt)
 		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
 		
 		-- Detonation Trigger
-		if (missile.Position - target.Position).Magnitude < 20 then
+		if (missile.Position - target.Position).Magnitude < 12 then
 			isDetonating = true 
 			launch = false -- 1. Immediately turn off guidance so it stops tracking
 			
