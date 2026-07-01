@@ -284,10 +284,10 @@ local speed = 800
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local RunService = game:GetService("RunService")
 
-local isDetonating = false -- Temporary lock during the 0.1s keypress
+local isDetonating = false 
+local smoothedTargetVelocity = Vector3.new(0,0,0)
 
 mainheart = RunService.RenderStepped:Connect(function(dt)
-	-- Continuous target/missile tracking verification
 	if targetPlayer and targetPlayer.Character then
 		target = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 		
@@ -295,56 +295,58 @@ mainheart = RunService.RenderStepped:Connect(function(dt)
 		if aircraft and aircraft:FindFirstChild("ExplosiveBlock") then
 			missile = aircraft.ExplosiveBlock.Decorate
 		else
-			missile = nil -- Clear reference if aircraft/missile doesn't exist yet
+			missile = nil 
 		end
 	end
 	
-	-- Only run if launch is active, objects exist, and it isn't currently exploding
 	if launch and target ~= nil and missile ~= nil and not isDetonating then
-		local targetvelocity = target.AssemblyLinearVelocity 
-		local missilevelocity = missile.AssemblyLinearVelocity 
+		-- 1. FIX: Smooth out the humanoid velocity jitter (Linear Interpolation)
+		-- This prevents the missile from violently over-correcting when players turn
+		local rawVelocity = target.AssemblyLinearVelocity
+		smoothedTargetVelocity = smoothedTargetVelocity:Lerp(rawVelocity, 0.25)
 		
-		local targetacceleration = Vector3.new(0,0,0)
 		local displacement = target.Position - missile.Position
 		local dist = displacement.Magnitude
 		
-		-- Closing velocity algorithm
 		local missileDir = displacement.Unit
-		local closingSpeed = speed - targetvelocity:Dot(missileDir)
+		local closingSpeed = speed - smoothedTargetVelocity:Dot(missileDir)
 		if closingSpeed <= 0 then closingSpeed = speed end 
 		
 		local timetotarget = dist / closingSpeed
-		local ping = localplayer:GetNetworkPing()
-		local totaltime = timetotarget + ping
+		
+		-- 2. FIX: Use FULL ping (RTT) to account for both your lag and target lag
+		local totalLatency = localplayer:GetNetworkPing() 
+		local totaltime = timetotarget + totalLatency
 		
 		-- Target intercept prediction
-		local calculatedtargetpos = target.Position + (targetvelocity * totaltime) + (0.5 * targetacceleration * (totaltime^2))
+		local calculatedtargetpos = target.Position + (smoothedTargetVelocity * totaltime)
 		
 		if predictedPart then
 			predictedPart.Position = calculatedtargetpos
 		end
 		
-		targetlastvelocity = targetvelocity
-		missilelastvelocity = missilevelocity
-
 		-- Guidance updates
 		local direction = (calculatedtargetpos - missile.Position).Unit
 		missile.AssemblyLinearVelocity = direction * speed
 		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
 		
-		-- Detonation Trigger
-		if (missile.Position - target.Position).Magnitude < 20 then
+		-- 3. FIX: Dynamic Detonation Distance
+		-- At 800 speed, a fixed 20 studs is cleared instantly. 
+		-- We scale the detonation distance slightly based on latency and speed.
+		local dynamicDetonateRadius = 22 + (closingSpeed * totalLatency * 0.4)
+		
+		if dist < dynamicDetonateRadius then
 			isDetonating = true 
-			launch = false -- 1. Immediately turn off guidance so it stops tracking
+			launch = false 
 			
-			-- 2. Run detonation keypress safely in the background
 			task.spawn(function()
-				print("DETONATE")
+				print("DETONATING AT DISTANCE: ", dist, " RADIUS: ", dynamicDetonateRadius)
+				-- Give VirtualInputManager a solid press duration so the engine registers it
 				VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-				task.wait(0.1)
+				task.wait(0.05) -- Tiny hold time ensures the client registers the downstroke
 				VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
 				
-				-- 3. Reset states so the system is completely ready for the next missile
+				task.wait(0.2)
 				target = nil
 				missile = nil
 				isDetonating = false 
@@ -352,5 +354,4 @@ mainheart = RunService.RenderStepped:Connect(function(dt)
 		end
 	end
 end)
-
 
