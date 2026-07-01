@@ -270,6 +270,7 @@ local missilelastvelocity = Vector3.new(0,0,0)
 local localplayer = game:GetService("Players").LocalPlayer
 local target = nil
 local missile = nil
+local speed = 1000
 mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 	if targetPlayer then
 		target = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -293,6 +294,10 @@ mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 		predictedPart.Position = calculatedtargetpos
 		targetlastvelocity = targetvelocity
 		missilelastvelocity = missilevelocity
+
+		local direction = (target.Position - part.Position).Unit
+		missile.AssemblyLinearVelocity =  direction * speed
+		part.CFrame = CFrame.lookAt(calculatedtargetpos, target.Position)
 	end
 end)
 
