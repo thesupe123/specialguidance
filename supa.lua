@@ -2,17 +2,7 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 -- Simulate pressing a key
-local function simulateKeyPress(keyCode)
-    duration = duration or 0.05  -- How long the key is held (in seconds)
-    
-    -- Press the key down
-    UserInputService:SetKeyDown(keyCode)
-    
-    task.wait(duration)
-    
-    -- Release the key
-    UserInputService:SetKeyUp(keyCode)
-end
+
 
 local localPlayer = Players.LocalPlayer
 local camera = workspace.CurrentCamera
@@ -316,7 +306,9 @@ mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 		missile.AssemblyLinearVelocity =  direction * speed
 		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
 		if (missile.Position-calculatedtargetpos).Magnitude < 3 then
-			simulateKeyPress(Enum.KeyCode.F)
+			VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+			task.wait(0.1)
+			VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
 			print("DETONATE")
 		end
 	end
