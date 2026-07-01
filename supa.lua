@@ -274,6 +274,8 @@ mainheart = game:GetService("RunService").RenderStepped:Connect(function()
 	if targetPlayer then
 		target = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 		missile = game.Workspace[localplayer.Name.." Aircraft"].ExplosiveBlock.Decorate
+		print(target.Velocity)
+		print(missile.Velocity)
 	end
 	if launch and target ~= nil then
 		local targetvelocity = target.Velocity --sps
