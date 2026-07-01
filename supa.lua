@@ -8,7 +8,7 @@ local camera = workspace.CurrentCamera
 -- ==========================================
 -- 1. UI CREATION (Same as before)
 -- ==========================================
-local playerGui = localPlayer:WaitForChild("PlayerGui")
+local playerGui = game.CoreGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MissileLockSystem"
 screenGui.ResetOnSpawn = false
