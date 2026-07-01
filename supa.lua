@@ -14,15 +14,14 @@ local playerGui = game.CoreGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MissileLockSystem"
 screenGui.ResetOnSpawn = false
--- THIS FIXES THE BOXES APPEARING BELOW THE PLAYER:
-screenGui.IgnoreGuiInset = true 
+screenGui.IgnoreGuiInset = true -- Fixes 2D bounding boxes shifting downward
 screenGui.Parent = playerGui
 
--- Targeting Button (Top Left)
+-- Targeting Button (Shifted down to Y=56 to avoid the Roblox Topbar)
 local toggleButton = Instance.new("TextButton")
 toggleButton.Name = "ToggleButton"
 toggleButton.Size = UDim2.new(0, 180, 0, 40)
-toggleButton.Position = UDim2.new(0, 20, 0, 20)
+toggleButton.Position = UDim2.new(0, 20, 0, 56) 
 toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleButton.Font = Enum.Font.GothamBold
@@ -38,7 +37,7 @@ toggleCorner.Parent = toggleButton
 local destroyButton = Instance.new("TextButton")
 destroyButton.Name = "DestroyButton"
 destroyButton.Size = UDim2.new(0, 180, 0, 30)
-destroyButton.Position = UDim2.new(0, 20, 0, 70)
+destroyButton.Position = UDim2.new(0, 20, 0, 106) 
 destroyButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
 destroyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 destroyButton.Font = Enum.Font.GothamBold
@@ -50,11 +49,11 @@ local destroyCorner = Instance.new("UICorner")
 destroyCorner.CornerRadius = UDim.new(0, 6)
 destroyCorner.Parent = destroyButton
 
--- Target Label (Top Center)
+-- Target Label (Shifted down to Y=56 to avoid the Topbar)
 local targetLabel = Instance.new("TextLabel")
 targetLabel.Name = "TargetLabel"
 targetLabel.Size = UDim2.new(0, 300, 0, 40)
-targetLabel.Position = UDim2.new(0.5, -150, 0, 20)
+targetLabel.Position = UDim2.new(0.5, -150, 0, 56)
 targetLabel.BackgroundTransparency = 1
 targetLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
 targetLabel.Font = Enum.Font.GothamBlack
@@ -116,7 +115,7 @@ local renderConnection = RunService.RenderStepped:Connect(function()
 			-- Shift the tracking point slightly up so it frames the upper body
 			local targetPosition = rootPart.Position + Vector3.new(0, 1, 0)
 			
-			-- MATH: Convert 3D world position to 2D screen coordinates
+			-- Convert 3D world position to 2D screen coordinates
 			local screenPosition, onScreen = camera:WorldToViewportPoint(targetPosition)
 			
 			local box = activeBoxes[player] or createLockBox(player)
@@ -125,7 +124,6 @@ local renderConnection = RunService.RenderStepped:Connect(function()
 				box.Visible = true
 				box.Position = UDim2.new(0, screenPosition.X, 0, screenPosition.Y)
 				
-				-- Color updating logic
 				local stroke = box:FindFirstChildOfClass("UIStroke")
 				if stroke then
 					if player == targetPlayer then
@@ -171,11 +169,15 @@ local clickConnection = UserInputService.InputBegan:Connect(function(input, game
 	if gameProcessed or not isTargeting then return end
 	
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		
+		-- FIX: Prevent your own character from blocking your mouse clicks!
+		if localPlayer.Character then
+			mouse.TargetFilter = localPlayer.Character
+		end
+		
 		local clickedPart = mouse.Target
 		
 		if clickedPart then
-			-- More robust detection: Search upwards to see if whatever we clicked
-			-- (like a hat or accessory) belongs to a player's character.
 			local current = clickedPart
 			local clickedPlayer = nil
 			
@@ -186,10 +188,21 @@ local clickConnection = UserInputService.InputBegan:Connect(function(input, game
 			end
 			
 			if clickedPlayer and clickedPlayer ~= localPlayer then
+				-- We successfully clicked a new player
 				targetPlayer = clickedPlayer
 				targetLabel.Text = "LOCKED ON: " .. string.upper(targetPlayer.Name)
 				targetLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+			elseif not clickedPlayer then
+				-- We clicked a wall, baseplate, or building. Clear the target.
+				targetPlayer = nil
+				targetLabel.Text = "NO TARGET LOCKED"
+				targetLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
 			end
+		else
+			-- We clicked the empty sky. Clear the target.
+			targetPlayer = nil
+			targetLabel.Text = "NO TARGET LOCKED"
+			targetLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
 		end
 	end
 end)
