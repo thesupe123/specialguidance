@@ -1,5 +1,5 @@
--- LocalScript (put in StarterPlayer > StarterPlayerScripts)
--- Missile Lock / Target Selector Script
+-- LocalScript (StarterPlayer > StarterPlayerScripts)
+-- Improved Missile Lock - Fixed Screen Size + Name Tags
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -8,15 +8,18 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
-local TARGET = nil  -- This is the selected target (Player object)
+local TARGET = nil
 
 -- Settings
 local BOX_COLOR = Color3.fromRGB(255, 50, 50)
-local BOX_THICKNESS = 3
-local BOX_SIZE_OFFSET = Vector2.new(80, 120)  -- Base size around character
-local UPDATE_RATE = 1 / 30  -- How often to update box positions
+local BOX_THICKNESS = 4
+local BOX_WIDTH = 90      -- Fixed screen pixels
+local BOX_HEIGHT = 130
+local NAME_OFFSET = 20    -- Pixels above the box
 
--- GUI Setup
+local enabled = false
+local activeBoxes = {}    -- [character] = {frame, nameLabel, player}
+
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MissileLockGui"
 screenGui.ResetOnSpawn = false
@@ -42,87 +45,105 @@ statusLabel.TextScaled = true
 statusLabel.Font = Enum.Font.Gotham
 statusLabel.Parent = screenGui
 
--- Store active lock boxes
-local activeBoxes = {}  -- [player] = {billboard, frame, cornerFrames...}
-
-local enabled = false
-
--- Create lock box for a character
+-- Create box elements
 local function createLockBox(character)
-    if not character or not character:FindFirstChild("HumanoidRootPart") then
-        return
-    end
+    local plr = Players:GetPlayerFromCharacter(character)
+    if not plr or plr == player then return end
     
-    local root = character.HumanoidRootPart
-    local humanoid = character:FindFirstChild("Humanoid")
-    if not humanoid then return end
+    -- Main Box Frame (fixed screen size)
+    local box = Instance.new("Frame")
+    box.Size = UDim2.new(0, BOX_WIDTH, 0, BOX_HEIGHT)
+    box.BackgroundTransparency = 1
+    box.BorderSizePixel = 0
+    box.Visible = false
+    box.Parent = screenGui
     
-    -- BillboardGui
-    local billboard = Instance.new("BillboardGui")
-    billboard.Adornee = root
-    billboard.Size = UDim2.new(0, 300, 0, 400)  -- Large enough area
-    billboard.StudsOffset = Vector3.new(0, 2, 0)
-    billboard.AlwaysOnTop = true
-    billboard.LightInfluence = 0
-    billboard.Parent = character
-    
-    -- Main transparent frame for click detection
-    local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(1, 0, 1, 0)
-    mainFrame.BackgroundTransparency = 1
-    mainFrame.Parent = billboard
-    
-    -- Corner brackets (classic missile lock look)
+    -- Corner brackets
     local corners = {}
-    local cornerPositions = {
-        {0, 0}, {1, 0}, {0, 1}, {1, 1}  -- top-left, top-right, bottom-left, bottom-right
+    local positions = {
+        {0, 0, 40, BOX_THICKNESS},      -- Top Left Horizontal
+        {0, 0, BOX_THICKNESS, 40},      -- Top Left Vertical
+        {1, 0, -40, BOX_THICKNESS},     -- Top Right Horizontal
+        {1, 0, -BOX_THICKNESS, 40},     -- Top Right Vertical
+        {0, 1, 40, -BOX_THICKNESS},     -- Bottom Left Horizontal
+        {0, 1, BOX_THICKNESS, -40},     -- Bottom Left Vertical
+        {1, 1, -40, -BOX_THICKNESS},    -- Bottom Right Horizontal
+        {1, 1, -BOX_THICKNESS, -40},    -- Bottom Right Vertical
     }
     
-    for _, pos in ipairs(cornerPositions) do
+    for _, p in ipairs(positions) do
         local corner = Instance.new("Frame")
         corner.BackgroundColor3 = BOX_COLOR
         corner.BorderSizePixel = 0
-        corner.Size = UDim2.new(0, 40, 0, BOX_THICKNESS)
-        corner.Position = UDim2.new(pos[1], pos[1] == 1 and -40 or 0, pos[2], pos[2] == 1 and -BOX_THICKNESS or 0)
-        corner.Parent = mainFrame
+        corner.Size = UDim2.new(0, math.abs(p[3]), 0, math.abs(p[4]))
+        corner.Position = UDim2.new(p[1], p[2] == 1 and -math.abs(p[3]) or 0, p[2], p[4] < 0 and -math.abs(p[4]) or 0)
+        corner.Parent = box
         table.insert(corners, corner)
-        
-        -- Vertical part
-        local vert = Instance.new("Frame")
-        vert.BackgroundColor3 = BOX_COLOR
-        vert.BorderSizePixel = 0
-        vert.Size = UDim2.new(0, BOX_THICKNESS, 0, 40)
-        vert.Position = UDim2.new(pos[1], pos[1] == 1 and -BOX_THICKNESS or 0, pos[2], pos[2] == 1 and -40 or 0)
-        vert.Parent = mainFrame
-        table.insert(corners, vert)
     end
     
+    -- Player Name
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Size = UDim2.new(0, 200, 0, 30)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
+    nameLabel.Text = plr.Name
+    nameLabel.TextScaled = true
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.Parent = screenGui
+    
     activeBoxes[character] = {
-        billboard = billboard,
-        mainFrame = mainFrame,
+        box = box,
+        nameLabel = nameLabel,
         corners = corners,
-        player = Players:GetPlayerFromCharacter(character)
+        player = plr
     }
 end
 
--- Remove box
 local function removeLockBox(character)
-    if activeBoxes[character] then
-        activeBoxes[character].billboard:Destroy()
+    local data = activeBoxes[character]
+    if data then
+        if data.box then data.box:Destroy() end
+        if data.nameLabel then data.nameLabel:Destroy() end
         activeBoxes[character] = nil
     end
+end
+
+-- World to Screen Position
+local function worldToScreen(pos)
+    local screenPos, onScreen = camera:WorldToViewportPoint(pos)
+    return Vector2.new(screenPos.X, screenPos.Y), onScreen and screenPos.Z > 0
 end
 
 -- Update all boxes
 local function updateBoxes()
     for character, data in pairs(activeBoxes) do
-        if not character.Parent then
+        if not character or not character.Parent or not character:FindFirstChild("HumanoidRootPart") then
             removeLockBox(character)
+            continue
+        end
+        
+        local root = character.HumanoidRootPart
+        local centerPos = root.Position + Vector3.new(0, 2, 0)  -- slightly above center
+        
+        local screenPos, visible = worldToScreen(centerPos)
+        
+        if visible then
+            -- Center the box on the character
+            local box = data.box
+            box.Position = UDim2.new(0, screenPos.X - BOX_WIDTH/2, 0, screenPos.Y - BOX_HEIGHT/2)
+            box.Visible = true
+            
+            -- Name above box
+            data.nameLabel.Position = UDim2.new(0, screenPos.X - 100, 0, screenPos.Y - BOX_HEIGHT/2 - NAME_OFFSET)
+            data.nameLabel.Visible = true
+        else
+            data.box.Visible = false
+            data.nameLabel.Visible = false
         end
     end
 end
 
--- Toggle function
+-- Toggle
 local function toggleLock()
     enabled = not enabled
     
@@ -130,28 +151,15 @@ local function toggleLock()
         toggleButton.Text = "Missile Lock: ON"
         toggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
         
-        -- Create boxes for existing characters
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr ~= player and plr.Character then
                 createLockBox(plr.Character)
-            end
-        end
-        
-        -- Listen for new characters
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= player then
-                plr.CharacterAdded:Connect(function(char)
-                    if enabled then
-                        createLockBox(char)
-                    end
-                end)
             end
         end
     else
         toggleButton.Text = "Missile Lock: OFF"
         toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
         
-        -- Remove all boxes
         for char, _ in pairs(activeBoxes) do
             removeLockBox(char)
         end
@@ -161,56 +169,69 @@ end
 
 toggleButton.MouseButton1Click:Connect(toggleLock)
 
--- Click detection
+-- Click Detection
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not enabled or gameProcessed then return end
-    if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+    if not enabled or gameProcessed or input.UserInputType ~= Enum.UserInputType.MouseButton1 then 
+        return 
+    end
     
     local mousePos = UserInputService:GetMouseLocation()
     
     for character, data in pairs(activeBoxes) do
-        if data.mainFrame and data.mainFrame.AbsolutePosition and data.mainFrame.AbsoluteSize then
-            local absPos = data.mainFrame.AbsolutePosition
-            local absSize = data.mainFrame.AbsoluteSize
+        if data.box and data.box.Visible then
+            local absPos = data.box.AbsolutePosition
+            local absSize = data.box.AbsoluteSize
             
             if mousePos.X >= absPos.X and mousePos.X <= absPos.X + absSize.X and
                mousePos.Y >= absPos.Y and mousePos.Y <= absPos.Y + absSize.Y then
                 
-                -- Clicked inside this box!
                 TARGET = data.player
-                statusLabel.Text = "TARGET: " .. (TARGET and TARGET.Name or "None")
-                print("Target locked: " .. (TARGET and TARGET.Name or "None"))
+                statusLabel.Text = "TARGET: " .. TARGET.Name
                 
-                -- Optional: Visual feedback
-                for _, corner in ipairs(data.corners or {}) do
-                    corner.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
+                -- Flash effect
+                for _, c in ipairs(data.corners) do
+                    c.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
                 end
-                wait(0.2)
-                if data.corners then
-                    for _, corner in ipairs(data.corners) do
-                        if corner then corner.BackgroundColor3 = BOX_COLOR end
+                task.delay(0.15, function()
+                    if data.corners then
+                        for _, c in ipairs(data.corners) do
+                            if c then c.BackgroundColor3 = BOX_COLOR end
+                        end
                     end
-                end
+                end)
                 return
             end
         end
     end
 end)
 
--- Character cleanup
-Players.PlayerRemoving:Connect(function(plr)
-    for char, data in pairs(activeBoxes) do
-        if data.player == plr then
-            removeLockBox(char)
+-- Player / Character handling
+Players.PlayerAdded:Connect(function(plr)
+    if plr == player then return end
+    plr.CharacterAdded:Connect(function(char)
+        if enabled then
+            task.wait(0.5)
+            createLockBox(char)
         end
-    end
+    end)
 end)
 
--- Main update loop
+for _, plr in ipairs(Players:GetPlayers()) do
+    if plr ~= player then
+        plr.CharacterAdded:Connect(function(char)
+            if enabled then createLockBox(char) end
+        end)
+        if plr.Character then
+            createLockBox(plr.Character)
+        end
+    end
+end
+
+-- Main Loop
 RunService.RenderStepped:Connect(function()
     if enabled then
         updateBoxes()
     end
 end)
 
-print("Missile Lock script loaded! Click the button to toggle.")
+print("Fixed-size Missile Lock script loaded!")
