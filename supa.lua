@@ -295,7 +295,7 @@ mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 		targetlastvelocity = targetvelocity
 		missilelastvelocity = missilevelocity
 
-		local direction = (target.Position - part.Position).Unit
+		local direction = (target.Position - predictedPart.Position).Unit
 		missile.AssemblyLinearVelocity =  direction * speed
 		part.CFrame = CFrame.lookAt(calculatedtargetpos, target.Position)
 	end
