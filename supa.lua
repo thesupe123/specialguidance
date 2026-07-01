@@ -251,6 +251,7 @@ launchCorner.CornerRadius = UDim.new(0, 8)
 launchCorner.Parent = launchButton
 
 local launch = false
+local debounce = false
 launchButton.MouseButton1Click:Connect(function()
 	if not targetPlayer then
 		launchButton.Text = "NO TARGET LOCKED!"
@@ -265,7 +266,13 @@ launchButton.MouseButton1Click:Connect(function()
 		launchButton.Text = "LAUNCH MISSILE"
 		return
 	end
-	launch = true
+	if debounce then
+		launch = false
+		debounce  = false
+	else
+		launch = true
+		debounce = true
+	end
 end)
 local predictedPart = Instance.new("Part")
 predictedPart.Anchored = true
@@ -303,7 +310,7 @@ mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 		end
 		local dist = ((target.Position-missile.Position).Magnitude)
 		local timetotarget = dist/(missilevelocity.Magnitude) -- seconds
-		local ping = localplayer:GetNetworkPing()
+		local ping = localplayer:GetNetworkPing()  *2
 	    local totaltime = timetotarget + ping
 		local calculatedtargetpos = target.Position + targetvelocity * totaltime + 0.5 * targetacceleration * totaltime^2
 		predictedPart.Position = calculatedtargetpos
