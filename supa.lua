@@ -270,7 +270,7 @@ local missilelastvelocity = Vector3.new(0,0,0)
 local localplayer = game:GetService("Players").LocalPlayer
 local target = nil
 local missile = nil
-mainheart = game:GetService("RunService").RenderStepped:Connect(function()
+mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 	if targetPlayer then
 		target = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 		missile = game.Workspace[localplayer.Name.." Aircraft"].ExplosiveBlock.Decorate
