@@ -4,7 +4,7 @@ local RunService = game:GetService("RunService")
 
 local localPlayer = Players.LocalPlayer
 local camera = workspace.CurrentCamera
-
+local mainheart
 -- ==========================================
 -- 1. MODERN UI CREATION
 -- ==========================================
@@ -214,4 +214,86 @@ end)
 destroyButton.MouseButton1Click:Connect(function()
 	for _, c in ipairs(connections) do c:Disconnect() end
 	screenGui:Destroy()
+	mainheart:Disconnect()
+	if game.Workspace:FindFirstChild("PredictedPosition") then
+		game.Workspace.PredictedPart:Destroy()	
+	end
 end)
+
+-- ==================== LAUNCH BUTTON ====================
+local launchButton = Instance.new("TextButton")
+launchButton.Size = UDim2.new(0.9, 0, 0, 45)
+launchButton.Position = UDim2.new(0.05, 0, 0, 145)  -- Below the destroy button
+launchButton.BackgroundColor3 = Color3.fromRGB(200, 30, 30)
+launchButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+launchButton.Font = Enum.Font.GothamBold
+launchButton.Text = "LAUNCH MISSILE"
+launchButton.TextSize = 17
+launchButton.Parent = controlFrame
+
+local launchCorner = Instance.new("UICorner")
+launchCorner.CornerRadius = UDim.new(0, 8)
+launchCorner.Parent = launchButton
+
+local launch = false
+launchButton.MouseButton1Click:Connect(function()
+	if not targetPlayer then
+		launchButton.Text = "NO TARGET LOCKED!"
+		task.wait(1.5)
+		launchButton.Text = "LAUNCH MISSILE"
+		return
+	end
+
+	if not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		launchButton.Text = "TARGET NOT FOUND!"
+		task.wait(1.2)
+		launchButton.Text = "LAUNCH MISSILE"
+		return
+	end
+
+end)
+local predictedPart = Instance.new("Part")
+predictedPart.Anchored = true
+predictedPart.Name = "PredictedPosition"
+predictedPart.Size = Vector3.new(1, 1, 1)
+predictedPart.Position = Vector3.new(0, 5, 0)
+predictedPart.Parent = workspace
+local handles = Instance.new("Handles")
+handles.Adornee = predictedPart
+handles.Style = Enum.HandlesStyle.Resize
+handles.Color3 = Color3.new(1, 1, 0) -- Bright yellow
+handles.Parent = workspace
+handles.Faces = Faces.new(Enum.NormalId.Top)
+
+local targetlastvelocity = Vector3.new(0,0,0)
+local missilelastvelocity = Vector3.new(0,0,0)
+local localplayer = game:GetService("Players").LocalPlayer
+local target = nil
+local missile = nil
+mainheart = game:GetService("RunService").RenderStepped:Connect(function()
+	if targetPlayer then
+		target = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+		missile = game.Workspace[localplayer.Name.." Aircraft"].ExplosiveBlock.Decorate
+	end
+	if launch and target ~= nil then
+		local targetvelocity = target.Velocity --sps
+	    local missilevelocity = missile.Velocity --sps
+		local targetacceleration = (targetvelocity-targetlastvelocity)/dt
+		local missileacceleration = (missilevelocity-missilelastvelocity)/dt
+		if missilevelocity.Magnitude < 1 then
+			missilevelocity = Vector3.new(0,1,0)
+		end
+		local dist = ((target.Position-missile.Position).Magnitude)
+		local timetotarget = dist/(missilevelocity.Magnitude) -- seconds
+		local ping = localplayer:GetNetworkPing()
+	    local totaltime = timetotarget + ping
+		local calculatedtargetpos = target.Position + targetvelocity * totaltime + 0.5 * targetacceleration * totaltime^2
+		predictedPart.Position = calculatedtargetpos
+		targetlastvelocity = targetvelocity
+		missilelastvelocity = missilevelocity
+	end
+end)
+
+
+
+
