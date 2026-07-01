@@ -270,7 +270,7 @@ local missilelastvelocity = Vector3.new(0,0,0)
 local localplayer = game:GetService("Players").LocalPlayer
 local target = nil
 local missile = nil
-local speed = 200
+local speed = 500
 mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 	if targetPlayer then
 		target = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
