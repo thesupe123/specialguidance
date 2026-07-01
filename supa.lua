@@ -297,8 +297,6 @@ mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 	if targetPlayer then
 		target = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 		missile = game.Workspace[localplayer.Name.." Aircraft"].ExplosiveBlock.Decorate
-		print(target.Velocity)
-		print(missile.Velocity)
 	end
 	if launch and target ~= nil then
 		local targetvelocity = target.Velocity --sps
@@ -322,6 +320,7 @@ mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
 		if (missile.Position-calculatedtargetpos).Magnitude < 3 then
 			simulateKeyPress(Enum.KeyCode.F,  0.1)
+			print("DETONATE")
 		end
 	end
 end)
