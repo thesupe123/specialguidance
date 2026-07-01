@@ -346,6 +346,7 @@ mainheart = RunService.RenderStepped:Connect(function(dt)
 				VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
 				task.wait(0.1)
 				VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+				mainheart:Connect()
 			end)
 		end
 	end
