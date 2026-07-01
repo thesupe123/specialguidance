@@ -6,135 +6,209 @@ local localPlayer = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
 -- ==========================================
--- 1. UI CREATION (Same as before)
+-- 1. MODERN UI CREATION
 -- ==========================================
 local playerGui = game.CoreGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MissileLockSystem"
 screenGui.ResetOnSpawn = false
-screenGui.IgnoreGuiInset = true 
+screenGui.IgnoreGuiInset = true
 screenGui.Parent = playerGui
 
+-- Main Control Frame
+local controlFrame = Instance.new("Frame")
+controlFrame.Size = UDim2.new(0, 220, 0, 140)
+controlFrame.Position = UDim2.new(0, 20, 0, 50)
+controlFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+controlFrame.BorderSizePixel = 0
+controlFrame.Parent = screenGui
+
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 12)
+uiCorner.Parent = controlFrame
+
+local uiStroke = Instance.new("UIStroke")
+uiStroke.Thickness = 1.5
+uiStroke.Color = Color3.fromRGB(80, 80, 90)
+uiStroke.Parent = controlFrame
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 35)
+title.BackgroundTransparency = 1
+title.Text = "MISSILE LOCK SYSTEM"
+title.TextColor3 = Color3.fromRGB(255, 50, 50)
+title.Font = Enum.Font.GothamBlack
+title.TextSize = 16
+title.Parent = controlFrame
+
+-- Toggle Button
 local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(0, 180, 0, 40)
-toggleButton.Position = UDim2.new(0, 20, 0, 56)
-toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+toggleButton.Size = UDim2.new(0.9, 0, 0, 45)
+toggleButton.Position = UDim2.new(0.05, 0, 0, 45)
+toggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleButton.Font = Enum.Font.GothamBold
-toggleButton.Text = "Targeting: OFF"
-toggleButton.Parent = screenGui
+toggleButton.Text = "TARGETING: OFF"
+toggleButton.TextSize = 16
+toggleButton.Parent = controlFrame
 
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 8)
+toggleCorner.Parent = toggleButton
+
+-- Destroy Button
 local destroyButton = Instance.new("TextButton")
-destroyButton.Size = UDim2.new(0, 180, 0, 30)
-destroyButton.Position = UDim2.new(0, 20, 0, 106)
-destroyButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+destroyButton.Size = UDim2.new(0.9, 0, 0, 30)
+destroyButton.Position = UDim2.new(0.05, 0, 0, 100)
+destroyButton.BackgroundColor3 = Color3.fromRGB(170, 20, 20)
 destroyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-destroyButton.Text = "Destroy System"
-destroyButton.Parent = screenGui
+destroyButton.Font = Enum.Font.GothamBold
+destroyButton.Text = "DESTROY SYSTEM"
+destroyButton.TextSize = 14
+destroyButton.Parent = controlFrame
 
+local destroyCorner = Instance.new("UICorner")
+destroyCorner.CornerRadius = UDim.new(0, 8)
+destroyCorner.Parent = destroyButton
+
+-- Target Label
 local targetLabel = Instance.new("TextLabel")
-targetLabel.Size = UDim2.new(0, 300, 0, 40)
-targetLabel.Position = UDim2.new(0.5, -150, 0, 56)
-targetLabel.BackgroundTransparency = 1
-targetLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+targetLabel.Size = UDim2.new(0, 320, 0, 50)
+targetLabel.Position = UDim2.new(0.5, -160, 0, 20)
+targetLabel.BackgroundTransparency = 0.3
+targetLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+targetLabel.TextColor3 = Color3.fromRGB(255, 60, 60)
 targetLabel.Font = Enum.Font.GothamBlack
 targetLabel.Text = "NO TARGET LOCKED"
+targetLabel.TextSize = 18
 targetLabel.Parent = screenGui
 
+local labelCorner = Instance.new("UICorner")
+labelCorner.CornerRadius = UDim.new(0, 10)
+labelCorner.Parent = targetLabel
+
+local labelStroke = Instance.new("UIStroke")
+labelStroke.Thickness = 2
+labelStroke.Color = Color3.fromRGB(255, 60, 60)
+labelStroke.Parent = targetLabel
+
+-- Box Container
 local boxContainer = Instance.new("Frame")
 boxContainer.Size = UDim2.new(1, 0, 1, 0)
 boxContainer.BackgroundTransparency = 1
 boxContainer.Parent = screenGui
 
 -- ==========================================
--- 2. LOGIC & RAYCASTING
+-- 2. LOGIC
 -- ==========================================
 local isTargeting = false
 local targetPlayer = nil
-local activeBoxes = {} 
-local connections = {} 
+local activeBoxes = {}
+local connections = {}
 
 local function createLockBox(player)
 	local frame = Instance.new("Frame")
 	frame.Name = player.Name .. "_LockBox"
-	frame.Size = UDim2.new(0, 50, 0, 50)
-	frame.AnchorPoint = Vector2.new(0.5, 0.5) 
+	frame.Size = UDim2.new(0, 70, 0, 70)
+	frame.AnchorPoint = Vector2.new(0.5, 0.5)
 	frame.BackgroundTransparency = 1
 	frame.Parent = boxContainer
+
+	-- Stroke
 	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 2
-	stroke.Color = Color3.fromRGB(0, 255, 0)
+	stroke.Thickness = 2.5
+	stroke.Color = Color3.fromRGB(0, 255, 100)
 	stroke.Parent = frame
+
+	-- Corner effect
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 6)
+	corner.Parent = frame
+
 	activeBoxes[player] = frame
+
+	-- CLICK DETECTION ON BOX
+	frame.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 and isTargeting then
+			targetPlayer = player
+			targetLabel.Text = "LOCKED ON: " .. string.upper(player.Name)
+			targetLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+		end
+	end)
+
+	-- Hover effect
+	frame.MouseEnter:Connect(function()
+		if player ~= targetPlayer then
+			stroke.Thickness = 4
+		end
+	end)
+
+	frame.MouseLeave:Connect(function()
+		if player ~= targetPlayer then
+			stroke.Thickness = 2.5
+		end
+	end)
+
 	return frame
 end
 
--- Render loop for boxes
+-- Render loop
 local renderConnection = RunService.RenderStepped:Connect(function()
-	if not isTargeting then 
-		for _, box in pairs(activeBoxes) do box.Visible = false end
-		return 
+	if not isTargeting then
+		for _, box in pairs(activeBoxes) do
+			box.Visible = false
+		end
+		return
 	end
 
 	for _, player in ipairs(Players:GetPlayers()) do
 		if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-			local screenPos, onScreen = camera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position + Vector3.new(0, 1, 0))
+			local root = player.Character.HumanoidRootPart
+			local screenPos, onScreen = camera:WorldToViewportPoint(root.Position + Vector3.new(0, 2, 0))
+
 			local box = activeBoxes[player] or createLockBox(player)
 			box.Visible = onScreen
+
 			if onScreen then
 				box.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
+
 				local stroke = box:FindFirstChildOfClass("UIStroke")
+				local distance = math.floor((localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") and 
+					(localPlayer.Character.HumanoidRootPart.Position - root.Position).Magnitude) or 0)
+
 				if player == targetPlayer then
-					stroke.Color = Color3.fromRGB(255, 0, 0)
-					stroke.Thickness = 3
-					box.Size = UDim2.new(0, 65, 0, 65)
+					stroke.Color = Color3.fromRGB(255, 60, 60)
+					stroke.Thickness = 4
+					box.Size = UDim2.new(0, 85, 0, 85)
 				else
-					stroke.Color = Color3.fromRGB(0, 255, 0)
-					stroke.Thickness = 2
-					box.Size = UDim2.new(0, 50, 0, 50)
+					stroke.Color = Color3.fromRGB(0, 255, 100)
+					stroke.Thickness = 2.5
+					box.Size = UDim2.new(0, 70, 0, 70)
 				end
 			end
 		end
 	end
 end)
+
 table.insert(connections, renderConnection)
 
--- Toggle Button
+-- Toggle
 toggleButton.MouseButton1Click:Connect(function()
 	isTargeting = not isTargeting
-	toggleButton.Text = isTargeting and "Targeting: ON" or "Targeting: OFF"
-	toggleButton.BackgroundColor3 = isTargeting and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 50)
-end)
-
--- FIXED: Click-to-Lock using Raycasting
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed or not isTargeting or input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
-	
-	local mousePos = UserInputService:GetMouseLocation()
-	local unitRay = camera:ViewportPointToRay(mousePos.X, mousePos.Y)
-	
-	-- Setup Raycast to ignore YOUR character
-	local raycastParams = RaycastParams.new()
-	raycastParams.FilterDescendantsInstances = {localPlayer.Character}
-	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-	
-	local raycastResult = workspace:Raycast(unitRay.Origin, unitRay.Direction * 1000, raycastParams)
-	
-	if raycastResult and raycastResult.Instance then
-		local character = raycastResult.Instance:FindFirstAncestorOfClass("Model")
-		local foundPlayer = character and Players:GetPlayerFromCharacter(character)
-		
-		if foundPlayer and foundPlayer ~= localPlayer then
-			targetPlayer = foundPlayer
-			targetLabel.Text = "LOCKED ON: " .. string.upper(targetPlayer.Name)
-		else
-			targetPlayer = nil
-			targetLabel.Text = "NO TARGET LOCKED"
-		end
+	if isTargeting then
+		toggleButton.Text = "TARGETING: ON"
+		toggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 80)
+	else
+		toggleButton.Text = "TARGETING: OFF"
+		toggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+		targetPlayer = nil
+		targetLabel.Text = "NO TARGET LOCKED"
+		targetLabel.TextColor3 = Color3.fromRGB(255, 60, 60)
 	end
 end)
 
--- Destroy System
+-- Destroy
 destroyButton.MouseButton1Click:Connect(function()
 	for _, c in ipairs(connections) do c:Disconnect() end
 	screenGui:Destroy()
