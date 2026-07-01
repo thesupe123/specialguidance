@@ -72,16 +72,16 @@ local destroyCorner = Instance.new("UICorner")
 destroyCorner.CornerRadius = UDim.new(0, 8)
 destroyCorner.Parent = destroyButton
 
--- Target Label
+-- Target Label (Improved Readability)
 local targetLabel = Instance.new("TextLabel")
-targetLabel.Size = UDim2.new(0, 320, 0, 50)
-targetLabel.Position = UDim2.new(0.5, -160, 0, 20)
-targetLabel.BackgroundTransparency = 0.3
-targetLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-targetLabel.TextColor3 = Color3.fromRGB(255, 60, 60)
+targetLabel.Size = UDim2.new(0, 340, 0, 55)
+targetLabel.Position = UDim2.new(0.5, -170, 0, 15)
+targetLabel.BackgroundTransparency = 0.25
+targetLabel.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+targetLabel.TextColor3 = Color3.fromRGB(255, 85, 85)
 targetLabel.Font = Enum.Font.GothamBlack
 targetLabel.Text = "NO TARGET LOCKED"
-targetLabel.TextSize = 18
+targetLabel.TextSize = 20
 targetLabel.Parent = screenGui
 
 local labelCorner = Instance.new("UICorner")
@@ -89,7 +89,7 @@ labelCorner.CornerRadius = UDim.new(0, 10)
 labelCorner.Parent = targetLabel
 
 local labelStroke = Instance.new("UIStroke")
-labelStroke.Thickness = 2
+labelStroke.Thickness = 2.5
 labelStroke.Color = Color3.fromRGB(255, 60, 60)
 labelStroke.Parent = targetLabel
 
@@ -108,83 +108,85 @@ local activeBoxes = {}
 local connections = {}
 
 local function createLockBox(player)
-	local frame = Instance.new("Frame")
-	frame.Name = player.Name .. "_LockBox"
-	frame.Size = UDim2.new(0, 70, 0, 70)
-	frame.AnchorPoint = Vector2.new(0.5, 0.5)
-	frame.BackgroundTransparency = 1
-	frame.Parent = boxContainer
+	local boxFrame = Instance.new("Frame")
+	boxFrame.Name = player.Name .. "_LockBox"
+	boxFrame.Size = UDim2.new(0, 68, 0, 68)
+	boxFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	boxFrame.BackgroundTransparency = 1
+	boxFrame.Parent = boxContainer
 
-	-- Stroke
+	-- Sharp stroke (no corner)
 	local stroke = Instance.new("UIStroke")
 	stroke.Thickness = 2.5
 	stroke.Color = Color3.fromRGB(0, 255, 100)
-	stroke.Parent = frame
+	stroke.Parent = boxFrame
 
-	-- Corner effect
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 6)
-	corner.Parent = frame
+	-- Info Label (Name + Distance)
+	local infoLabel = Instance.new("TextLabel")
+	infoLabel.Size = UDim2.new(0, 200, 0, 40)
+	infoLabel.Position = UDim2.new(0.5, -100, 0, -45)  -- Above the box
+	infoLabel.BackgroundTransparency = 1
+	infoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	infoLabel.Font = Enum.Font.GothamBold
+	infoLabel.TextSize = 13
+	infoLabel.TextStrokeTransparency = 0.4
+	infoLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	infoLabel.Parent = boxFrame
 
-	activeBoxes[player] = frame
+	activeBoxes[player] = {Box = boxFrame, Info = infoLabel}
 
-	-- CLICK DETECTION ON BOX
-	frame.InputBegan:Connect(function(input)
+	-- Click on box to lock
+	boxFrame.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 and isTargeting then
 			targetPlayer = player
-			targetLabel.Text = "LOCKED ON: " .. string.upper(player.Name)
-			targetLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+			targetLabel.Text = "LOCKED → " .. string.upper(player.Name)
+			targetLabel.TextColor3 = Color3.fromRGB(255, 70, 70)
 		end
 	end)
 
-	-- Hover effect
-	frame.MouseEnter:Connect(function()
-		if player ~= targetPlayer then
-			stroke.Thickness = 4
-		end
-	end)
-
-	frame.MouseLeave:Connect(function()
-		if player ~= targetPlayer then
-			stroke.Thickness = 2.5
-		end
-	end)
-
-	return frame
+	return activeBoxes[player]
 end
 
 -- Render loop
 local renderConnection = RunService.RenderStepped:Connect(function()
 	if not isTargeting then
-		for _, box in pairs(activeBoxes) do
-			box.Visible = false
+		for _, data in pairs(activeBoxes) do
+			data.Box.Visible = false
 		end
 		return
 	end
 
+	local myRoot = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
+
 	for _, player in ipairs(Players:GetPlayers()) do
 		if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
 			local root = player.Character.HumanoidRootPart
-			local screenPos, onScreen = camera:WorldToViewportPoint(root.Position + Vector3.new(0, 2, 0))
+			local screenPos, onScreen = camera:WorldToViewportPoint(root.Position + Vector3.new(0, 2.5, 0))
 
-			local box = activeBoxes[player] or createLockBox(player)
+			local boxData = activeBoxes[player] or createLockBox(player)
+			local box = boxData.Box
+			local info = boxData.Info
+
 			box.Visible = onScreen
 
 			if onScreen then
 				box.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
 
+				local distance = myRoot and math.floor((myRoot.Position - root.Position).Magnitude) or 0
+
+				-- Update info text
+				info.Text = string.upper(player.Name) .. "\n" .. distance .. " studs"
+
 				local stroke = box:FindFirstChildOfClass("UIStroke")
-				local distance = math.floor((localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") and 
-					(localPlayer.Character.HumanoidRootPart.Position - root.Position).Magnitude) or 0)
 
 				if player == targetPlayer then
 					stroke.Color = Color3.fromRGB(255, 60, 60)
 					stroke.Thickness = 4
-					box.Size = UDim2.new(0, 85, 0, 85)
+					box.Size = UDim2.new(0, 82, 0, 82)
 				else
 					stroke.Color = Color3.fromRGB(0, 255, 100)
 					stroke.Thickness = 2.5
-					box.Size = UDim2.new(0, 70, 0, 70)
+					box.Size = UDim2.new(0, 68, 0, 68)
 				end
 			end
 		end
@@ -204,7 +206,7 @@ toggleButton.MouseButton1Click:Connect(function()
 		toggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
 		targetPlayer = nil
 		targetLabel.Text = "NO TARGET LOCKED"
-		targetLabel.TextColor3 = Color3.fromRGB(255, 60, 60)
+		targetLabel.TextColor3 = Color3.fromRGB(255, 85, 85)
 	end
 end)
 
