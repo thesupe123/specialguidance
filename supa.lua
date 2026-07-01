@@ -279,7 +279,7 @@ local missilelastvelocity = Vector3.new(0,0,0)
 local localplayer = game:GetService("Players").LocalPlayer
 local target = nil
 local missile = nil
-local speed = 1200
+local speed = 1000
 
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local RunService = game:GetService("RunService")
@@ -338,15 +338,12 @@ mainheart = RunService.RenderStepped:Connect(function(dt)
 		-- Detonation Logic (Checks actual distance to target part for consistency)
 		if (missile.Position - target.Position).Magnitude < 15 then
 			isDetonating = true -- Lock the loop immediately
-			mainheart:Disconnect() -- Stop tracking entirely
-			
 			-- Fire the keypress safely in a separate thread
 			task.spawn(function()
 				print("DETONATE")
 				VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
 				task.wait(0.1)
 				VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-				mainheart:Connect()
 			end)
 		end
 	end
