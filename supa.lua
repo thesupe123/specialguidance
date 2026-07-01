@@ -250,7 +250,7 @@ launchButton.MouseButton1Click:Connect(function()
 		launchButton.Text = "LAUNCH MISSILE"
 		return
 	end
-
+	launch = true
 end)
 local predictedPart = Instance.new("Part")
 predictedPart.Anchored = true
