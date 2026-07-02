@@ -312,6 +312,9 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 		predictedPart.Position = calculatedtargetpos
 		targetlastvelocity = targetvelocity
 		missilelastvelocity = missilevelocity
+		local direction = (calculatedtargetpos - missile.Position).Unit
+		missile.AssemblyLinearVelocity =  missile.CFrame.LookVector * speed
+		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
 		if ((missile.Position)-calculatedtargetpos).Magnitude < 12 then
 			VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
 			task.wait(0.1)
@@ -322,9 +325,6 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 			task.wait(3)
 			game.Workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character.Humanoid
 		end
-		local direction = (calculatedtargetpos - missile.Position).Unit
-		missile.AssemblyLinearVelocity =  missile.CFrame.LookVector * speed
-		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
 	end
 end)
 
