@@ -296,7 +296,7 @@ mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 		end
 		local dist = ((target.Position-missile.Position).Magnitude)
 		local timetotarget = dist/(missilevelocity.Magnitude) -- seconds
-		local ping = localplayer:GetNetworkPing() *1.2
+		local ping = localplayer:GetNetworkPing() 
 	    local totaltime = timetotarget + ping
 		local calculatedtargetpos = target.Position + targetvelocity * totaltime + 0.5 * targetacceleration * totaltime^2
 		predictedPart.Position = calculatedtargetpos
