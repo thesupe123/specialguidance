@@ -286,7 +286,7 @@ local target = nil
 local missile = nil
 local speed = 800
 local VirtualInputManager = game:GetService("VirtualInputManager")
-mainheart = game:GetService("RunService").HeartBeat:Connect(function(dt)
+mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 	if targetPlayer then
 		target = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 		missile = game.Workspace[localplayer.Name.." Aircraft"].ExplosiveBlock.Decorate
