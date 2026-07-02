@@ -296,13 +296,8 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 	    local missilevelocity = missile.Velocity --sps
 
 			
-		local rawtargetacceleration = (targetvelocity-targetlastvelocity)/dt
-		local rawmissileacceleration = (missilevelocity-missilelastvelocity)/dt
-
-		local alpha = 1 - math.exp(-responsiveness * dt)
-
-		local targetacceleration = targetsmoothedaccel:Lerp(rawtargetacceleration, alpha)
-		local missileacceleration = missilesmoothedaccel:Lerp(rawmissileacceleration, alpha)
+		local targetacceleration = (targetvelocity-targetlastvelocity)/dt
+		local missileacceleration = (missilevelocity-missilelastvelocity)/dt
 		
 		if missilevelocity.Magnitude < 1 then
 			missilevelocity = Vector3.new(0,1,0)
