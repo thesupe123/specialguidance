@@ -319,11 +319,14 @@ mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 		local direction = (calculatedtargetpos - missile.Position).Unit
 		missile.AssemblyLinearVelocity =  missile.CFrame.LookVector * speed
 		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
+		game.Workspace.CurrentCamera.CameraSubject = missile
 		if (missile.Position-calculatedtargetpos).Magnitude < 20 then
 			VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
 			task.wait(0.1)
 			VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
 			print("DETONATE")
+			launch = false
+			game.Workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character.Humanoid
 		end
 	end
 end)
