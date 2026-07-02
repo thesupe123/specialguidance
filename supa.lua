@@ -321,6 +321,7 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 			VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
 			print("DETONATE")
 			launch = false
+			task.wait(3)
 			game.Workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character.Humanoid
 		end
 	end
