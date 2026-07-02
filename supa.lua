@@ -258,6 +258,7 @@ launchButton.MouseButton1Click:Connect(function()
 		debounce  = false
 	else
 		launch = true
+		game.Workspace.CurrentCamera.CameraSubject = missile
 		debounce = true
 	end
 end)
@@ -314,7 +315,6 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 		local direction = (calculatedtargetpos - missile.Position).Unit
 		missile.AssemblyLinearVelocity =  missile.CFrame.LookVector * speed
 		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
-		game.Workspace.CurrentCamera.CameraSubject = missile
 		if (missile.Position-calculatedtargetpos).Magnitude < 20 then
 			VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
 			task.wait(0.1)
