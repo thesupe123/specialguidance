@@ -317,7 +317,7 @@ mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 		missilelastvelocity = missilevelocity
 
 		local direction = (calculatedtargetpos - missile.Position).Unit
-		missile.AssemblyLinearVelocity =  direction * speed
+		missile.AssemblyLinearVelocity =  missile.CFrame.LookVector * speed
 		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
 		if (missile.Position-calculatedtargetpos).Magnitude < 20 then
 			VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
