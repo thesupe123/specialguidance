@@ -265,9 +265,11 @@ end)
 local predictedPart = Instance.new("Part")
 predictedPart.Anchored = true
 predictedPart.Name = "PredictedPosition"
-predictedPart.Size = Vector3.new(1, 1, 1)
+predictedPart.Size = Vector3.new(4, 4, 4)
 predictedPart.Position = Vector3.new(0, 5, 0)
 predictedPart.Parent = workspace
+predictedPart.CanCollide = false
+predictedPart.CanTouch = true
 local handles = Instance.new("Handles")
 handles.Adornee = predictedPart
 handles.Style = Enum.HandlesStyle.Resize
