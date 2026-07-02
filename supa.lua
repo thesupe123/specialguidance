@@ -3,7 +3,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 -- Simulate pressing a key
 
-
+local missile = nil
 local localPlayer = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 local mainheart
@@ -284,7 +284,6 @@ local responsiveness = 15
 
 local localplayer = game:GetService("Players").LocalPlayer
 local target = nil
-local missile = nil
 local speed = 800
 local VirtualInputManager = game:GetService("VirtualInputManager")
 mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
@@ -321,6 +320,7 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 			VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
 			print("DETONATE")
 			launch = false
+			debounce = false
 			task.wait(3)
 			game.Workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character.Humanoid
 		end
