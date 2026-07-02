@@ -265,7 +265,7 @@ end)
 local predictedPart = Instance.new("Part")
 predictedPart.Anchored = true
 predictedPart.Name = "PredictedPosition"
-predictedPart.Size = Vector3.new(4, 4, 4)
+predictedPart.Size = Vector3.new(8, 8, 8)
 predictedPart.Position = Vector3.new(0, 5, 0)
 predictedPart.Parent = workspace
 predictedPart.CanCollide = false
@@ -274,7 +274,7 @@ local handles = Instance.new("Handles")
 handles.Adornee = predictedPart
 handles.Style = Enum.HandlesStyle.Resize
 handles.Color3 = Color3.new(1, 1, 0) -- Bright yellow
-handles.Parent = workspace
+--handles.Parent = workspace
 handles.Faces = Faces.new(Enum.NormalId.Top)
 
 local targetlastvelocity = Vector3.new(0,0,0)
