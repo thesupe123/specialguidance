@@ -276,6 +276,11 @@ handles.Faces = Faces.new(Enum.NormalId.Top)
 
 local targetlastvelocity = Vector3.new(0,0,0)
 local missilelastvelocity = Vector3.new(0,0,0)
+local targetsmoothedaccel = Vector3.new(0,0,0)
+local missilesmoothedaccel = Vector3.new(0,0,0)
+
+local responsiveness = 15
+
 local localplayer = game:GetService("Players").LocalPlayer
 local target = nil
 local missile = nil
@@ -289,8 +294,16 @@ mainheart = game:GetService("RunService").RenderStepped:Connect(function(dt)
 	if launch and target ~= nil then
 		local targetvelocity = target.Velocity --sps
 	    local missilevelocity = missile.Velocity --sps
-		local targetacceleration = (targetvelocity-targetlastvelocity)/dt
-		local missileacceleration = (missilevelocity-missilelastvelocity)/dt
+
+			
+		local rawtargetacceleration = (targetvelocity-targetlastvelocity)/dt
+		local rawmissileacceleration = (missilevelocity-missilelastvelocity)/dt
+
+		local alpha = 1 - math.exp(-responsiveness * dt)
+
+		local targetacceleration = targetsmoothedaccel:Lerp(rawtargetacceleration, alpha)
+		local missileacceleration = missilesmoothedaccel:Lerp(rawmissileacceleration, alpha)
+		
 		if missilevelocity.Magnitude < 1 then
 			missilevelocity = Vector3.new(0,1,0)
 		end
