@@ -328,7 +328,7 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 		local direction = (calculatedtargetpos - missile.Position).Unit
 		missile.AssemblyLinearVelocity =  direction * speed
 		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
-		if (missile.Position-calculatedtargetpos).Magnitude < 16 then
+		if (missile.Position-calculatedtargetpos).Magnitude < 10 then
 				local newdist = (missile.Position-(calculatedtargetpos+(target.Velocity*ping))).Magnitude
 				task.wait(newdist/(missilevelocity.Magnitude))
 				for i,v in pairs(missile.Parent.Parent:GetChildren()) do
