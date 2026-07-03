@@ -258,12 +258,14 @@ launchButton.MouseButton1Click:Connect(function()
 		debounce  = false
 	else
 		for i,v in pairs(game.Workspace[localPlayer.Name.." Aircraft"]:GetChildren()) do
-			if not v.Parent:FindFirstChild(tostring(v.BrickColor)) then
-				local missilefolder = Instance.new("Folder")
-				missilefolder.Name = tostring(v.BrickColor)
-				missilefolder.Parent = v.Parent
-			else
-				v.Parent = v.Parent:FindFirstChild(tostring(v.BrickColor))
+			if v.Name == "ExplosiveBlock" then
+				if not v.Parent:FindFirstChild(tostring(v.Decorate.BrickColor)) then
+					local missilefolder = Instance.new("Folder")
+					missilefolder.Name = tostring(v.Decorate.BrickColor)
+					missilefolder.Parent = v.Parent
+				else
+					v.Parent = v.Parent:FindFirstChild(tostring(v.Decorate.BrickColor))
+				end
 			end
 		end
 		launch = true
