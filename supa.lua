@@ -317,10 +317,10 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 		missile.AssemblyLinearVelocity =  missile.CFrame.LookVector * speed
 		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
 		if (missile.Position-calculatedtargetpos).Magnitude < 20 then
+				local newdist = (missile.Position-(calculatedtargetpos+(target.Velocity*ping))).Magnitude
+				task.wait(newdist/(missilevelocity.Magnitude))
 				for i,v in pairs(game.Workspace[localplayer.Name.." Aircraft"]:GetChildren()) do
 					if v.Name == "ExplosiveBlock" then
-						local newdist = (missile.Position-(calculatedtargetpos+(target.Velocity*ping))).Magnitude
-						task.wait(newdist/(missilevelocity.Magnitude))
 						v.Events.Explode:Fire(4)
 					end
 				end
