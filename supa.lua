@@ -285,7 +285,7 @@ local responsiveness = 15
 
 local localplayer = game:GetService("Players").LocalPlayer
 local target = nil
-local speed = 1000
+local speed = 1800
 local VirtualInputManager = game:GetService("VirtualInputManager")
 mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 	if targetPlayer and launch then
