@@ -318,7 +318,6 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 		if (missile.Position-calculatedtargetpos).Magnitude < 20 then
 				local newdist = (missile.Position-(calculatedtargetpos+(target.Velocity*ping))).Magnitude
 				task.wait(newdist/(missilevelocity.Magnitude))
-				missile.Anchored = true
 				for i,v in pairs(game.Workspace[localplayer.Name.." Aircraft"]:GetChildren()) do
 					if v.Name == "ExplosiveBlock" then
 						v.Events.Explode:Fire(4)
