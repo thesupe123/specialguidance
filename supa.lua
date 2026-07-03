@@ -265,14 +265,16 @@ end)
 local predictedPart = Instance.new("Part")
 predictedPart.Anchored = true
 predictedPart.Name = "PredictedPosition"
-predictedPart.Size = Vector3.new(1, 1, 1)
+predictedPart.Size = Vector3.new(8, 8, 8)
 predictedPart.Position = Vector3.new(0, 5, 0)
 predictedPart.Parent = workspace
+predictedPart.CanCollide = false
+predictedPart.CanTouch = true
 local handles = Instance.new("Handles")
 handles.Adornee = predictedPart
 handles.Style = Enum.HandlesStyle.Resize
 handles.Color3 = Color3.new(1, 1, 0) -- Bright yellow
-handles.Parent = workspace
+--handles.Parent = workspace
 handles.Faces = Faces.new(Enum.NormalId.Top)
 
 local targetlastvelocity = Vector3.new(0,0,0)
@@ -315,15 +317,19 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 		missile.AssemblyLinearVelocity =  missile.CFrame.LookVector * speed
 		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
 		if (missile.Position-calculatedtargetpos).Magnitude < 20 then
-			VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-			task.wait(0.1)
-			VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-			print("DETONATE")
-			launch = false
-			debounce = false
-			task.wait(3)
-			game.Workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character.Humanoid
+			
 		end
 	end
+end)
+
+predictedPart.Touched:Connect(function(hit)
+	VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+	task.wait(0.1)
+	VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+	print("DETONATE")
+	launch = false
+	debounce = false
+	task.wait(3)
+	game.Workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character.Humanoid
 end)
 
