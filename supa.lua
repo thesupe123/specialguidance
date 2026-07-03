@@ -338,7 +338,7 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 				debounce = false
 				task.wait(3)
 				game.Workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character.Humanoid
-				missile.Parent:Destroy()
+				missile.Parent.Parent:Destroy()
 		end
 	end
 end)
