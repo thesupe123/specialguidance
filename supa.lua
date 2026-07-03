@@ -259,6 +259,7 @@ launchButton.MouseButton1Click:Connect(function()
 	else
 		launch = true
 		debounce = true
+		game.Workspace.CurrentCamera.CameraType = "Custom"
 		game.Workspace.CurrentCamera.CameraSubject = missile
 	end
 end)
@@ -274,7 +275,7 @@ local handles = Instance.new("Handles")
 handles.Adornee = predictedPart
 handles.Style = Enum.HandlesStyle.Resize
 handles.Color3 = Color3.new(1, 1, 0) -- Bright yellow
---handles.Parent = workspace
+handles.Parent = workspace
 handles.Faces = Faces.new(Enum.NormalId.Top)
 
 local targetlastvelocity = Vector3.new(0,0,0)
@@ -286,7 +287,7 @@ local responsiveness = 15
 
 local localplayer = game:GetService("Players").LocalPlayer
 local target = nil
-local speed = 800
+local speed = 1000
 local VirtualInputManager = game:GetService("VirtualInputManager")
 mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 	if targetPlayer and launch then
