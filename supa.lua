@@ -257,7 +257,7 @@ launchButton.MouseButton1Click:Connect(function()
 		launch = false
 		debounce  = false
 	else
-		if not v:FindFirstChildOfClass("Folder") then
+		if not game.Workspace[localPlayer.Name.." Aircraft"]:FindFirstChildOfClass("Folder") then
 			for i,v in pairs(game.Workspace[localPlayer.Name.." Aircraft"]:GetChildren()) do
 				if v.Name == "ExplosiveBlock" then
 					if not v.Parent:FindFirstChild(tostring(v.Decorate.BrickColor)) then
