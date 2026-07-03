@@ -259,7 +259,6 @@ launchButton.MouseButton1Click:Connect(function()
 	else
 		launch = true
 		debounce = true
-		game.Workspace.CurrentCamera.CameraSubject = missile
 	end
 end)
 local predictedPart = Instance.new("Part")
@@ -290,6 +289,7 @@ local speed = 1000
 local VirtualInputManager = game:GetService("VirtualInputManager")
 mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 	if targetPlayer and launch then
+		game.Workspace.CurrentCamera.CameraSubject = missile
 		target = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 		missile = game.Workspace[localplayer.Name.." Aircraft"].ExplosiveBlock.Decorate
 	end
