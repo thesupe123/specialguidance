@@ -317,10 +317,11 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 		missile.AssemblyLinearVelocity =  missile.CFrame.LookVector * speed
 		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
 		if (missile.Position-calculatedtargetpos).Magnitude < 20 then
-				VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-				task.wait(0.1)
-				VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-				print("DETONATE")
+				for i,v in pairs(game.Workspace[localplayer.Name.." Aircraft"]:GetChildren()) do
+					if v.Name == "ExplosiveBlock" then
+						v.Events.Explode:Fire(4)
+					end
+				end
 				launch = false
 				debounce = false
 				task.wait(3)
