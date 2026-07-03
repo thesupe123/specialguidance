@@ -270,6 +270,7 @@ launchButton.MouseButton1Click:Connect(function()
 				end
 			end
 		end
+		missile = game.Workspace[localplayer.Name.." Aircraft"]:FindFirstChildOfClass("Folder").ExplosiveBlock.Decorate
 		launch = true
 		debounce = true
 	end
@@ -304,7 +305,6 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 	if targetPlayer and launch then
 		game.Workspace.CurrentCamera.CameraSubject = missile
 		target = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-		missile = game.Workspace[localplayer.Name.." Aircraft"]:FindFirstChildOfClass("Folder").ExplosiveBlock.Decorate
 	end
 	if launch and target ~= nil then
 		local targetvelocity = target.Velocity --sps
