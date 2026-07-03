@@ -270,7 +270,6 @@ launchButton.MouseButton1Click:Connect(function()
 				end
 			end
 		end
-		missile = game.Workspace[localPlayer.Name.." Aircraft"]:FindFirstChildOfClass("Folder").ExplosiveBlock.Decorate
 		launch = true
 		debounce = true
 	end
@@ -305,6 +304,7 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 	if targetPlayer and launch then
 		game.Workspace.CurrentCamera.CameraSubject = missile
 		target = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+		missile = game.Workspace[localplayer.Name.." Aircraft"]:FindFirstChildOfClass("Folder").ExplosiveBlock.Decorate
 	end
 	if launch and target ~= nil then
 		local targetvelocity = target.Velocity --sps
@@ -326,10 +326,8 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 		missilelastvelocity = missilevelocity
 
 		local direction = (calculatedtargetpos - missile.Position).Unit
-		for i,v in pairs(missile.Parent:GetChildren()) do
-			v.AssemblyLinearVelocity =  v.CFrame.lookVector * speed
-			v.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
-		end
+		missile.AssemblyLinearVelocity =  direction * speed
+		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
 		if (missile.Position-calculatedtargetpos).Magnitude < 16 then
 				local newdist = (missile.Position-(calculatedtargetpos+(target.Velocity*ping))).Magnitude
 				task.wait(newdist/(missilevelocity.Magnitude))
