@@ -259,7 +259,6 @@ launchButton.MouseButton1Click:Connect(function()
 	else
 		launch = true
 		debounce = true
-		game.Workspace.CurrentCamera.CameraType = "Custom"
 		game.Workspace.CurrentCamera.CameraSubject = missile
 	end
 end)
