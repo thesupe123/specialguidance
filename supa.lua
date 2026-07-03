@@ -270,7 +270,7 @@ launchButton.MouseButton1Click:Connect(function()
 				end
 			end
 		end
-		missile = game.Workspace[localplayer.Name.." Aircraft"]:FindFirstChildOfClass("Folder").ExplosiveBlock.Decorate
+		missile = game.Workspace[localPlayer.Name.." Aircraft"]:FindFirstChildOfClass("Folder").ExplosiveBlock.Decorate
 		launch = true
 		debounce = true
 	end
