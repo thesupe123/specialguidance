@@ -257,6 +257,15 @@ launchButton.MouseButton1Click:Connect(function()
 		launch = false
 		debounce  = false
 	else
+		for i,v in pairs(game.Workspace[localPlayer.Name.." Aircraft"]:GetChildren()) do
+			if not v.Parent:FindFirstChild(tostring(v.BrickColor)) then
+				local missilefolder = Instance.new("Folder")
+				missilefolder.Name = tostring(v.BrickColor)
+				missilefolder.Parent = v.Parent
+			else
+				v.Parent = v.Parent:FindFirstChild(tostring(v.BrickColor))
+			end
+		end
 		launch = true
 		debounce = true
 	end
@@ -291,7 +300,7 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 	if targetPlayer and launch then
 		game.Workspace.CurrentCamera.CameraSubject = missile
 		target = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-		missile = game.Workspace[localplayer.Name.." Aircraft"].ExplosiveBlock.Decorate
+		missile = game.Workspace[localplayer.Name.." Aircraft"]:FindFirstChildOfClass("Folder").ExplosiveBlock.Decorate
 	end
 	if launch and target ~= nil then
 		local targetvelocity = target.Velocity --sps
@@ -327,6 +336,7 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 				debounce = false
 				task.wait(3)
 				game.Workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character.Humanoid
+				missile.Parent:Destroy()
 		end
 	end
 end)
