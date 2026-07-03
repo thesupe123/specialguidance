@@ -296,7 +296,7 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 	if launch and target ~= nil then
 		local targetvelocity = target.Velocity --sps
 	    local missilevelocity = missile.Velocity --sps
-
+		speed = targetvelocity.Magnitude*2
 			
 		local targetacceleration = (targetvelocity-targetlastvelocity)/dt
 		local missileacceleration = (missilevelocity-missilelastvelocity)/dt
