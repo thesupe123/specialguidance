@@ -265,7 +265,7 @@ end)
 local predictedPart = Instance.new("Part")
 predictedPart.Anchored = true
 predictedPart.Name = "PredictedPosition"
-predictedPart.Size = Vector3.new(8, 8, 8)
+predictedPart.Size = Vector3.new(16, 16, 16)
 predictedPart.Position = Vector3.new(0, 5, 0)
 predictedPart.Parent = workspace
 predictedPart.CanCollide = false
