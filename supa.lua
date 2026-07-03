@@ -258,8 +258,8 @@ launchButton.MouseButton1Click:Connect(function()
 		debounce  = false
 	else
 		launch = true
-		game.Workspace.CurrentCamera.CameraSubject = missile
 		debounce = true
+		game.Workspace.CurrentCamera.CameraSubject = missile
 	end
 end)
 local predictedPart = Instance.new("Part")
