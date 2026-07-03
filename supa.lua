@@ -316,6 +316,7 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 		missile.AssemblyLinearVelocity =  direction * speed
 		missile.CFrame = CFrame.lookAt(missile.Position, calculatedtargetpos)
 		if (missile.Position-calculatedtargetpos).Magnitude < 20 then
+				missile.Anchored = true
 				local newdist = (missile.Position-(calculatedtargetpos+(target.Velocity*ping))).Magnitude
 				task.wait(newdist/(missilevelocity.Magnitude))
 				for i,v in pairs(game.Workspace[localplayer.Name.." Aircraft"]:GetChildren()) do
