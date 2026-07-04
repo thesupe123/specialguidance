@@ -294,6 +294,8 @@ local missilelastvelocity = Vector3.new(0,0,0)
 local targetsmoothedaccel = Vector3.new(0,0,0)
 local missilesmoothedaccel = Vector3.new(0,0,0)
 
+local targetlastacceleration = Vector3.new(0,0,0)
+
 local responsiveness = 15
 
 local localplayer = game:GetService("Players").LocalPlayer
@@ -312,6 +314,8 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 			
 		local targetacceleration = (targetvelocity-targetlastvelocity)/dt
 		local missileacceleration = (missilevelocity-missilelastvelocity)/dt
+			
+		local targetjerk = (targetacceleration - targetlastacceleration) / deltatime
 		
 		if missilevelocity.Magnitude < 1 then
 			missilevelocity = Vector3.new(0,1,0)
@@ -320,7 +324,7 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 		local timetotarget = dist/(missilevelocity.Magnitude) -- seconds
 		local ping = localplayer:GetNetworkPing()
 	    local totaltime = timetotarget + ping
-		local calculatedtargetpos = target.Position + targetvelocity * totaltime + 0.5 * targetacceleration * totaltime^2
+		local calculatedtargetpos = target.Position + (targetvelocity * totaltime) + (0.5 * targetacceleration * totaltime^2) + ((1/6) * targetjerk * totaltime^3)
 		predictedPart.Position = calculatedtargetpos
 		targetlastvelocity = targetvelocity
 		missilelastvelocity = missilevelocity
