@@ -315,7 +315,7 @@ mainheart = game:GetService("RunService").Stepped:Connect(function(dt)
 		local targetacceleration = (targetvelocity-targetlastvelocity)/dt
 		local missileacceleration = (missilevelocity-missilelastvelocity)/dt
 			
-		local targetjerk = (targetacceleration - targetlastacceleration) / deltatime
+		local targetjerk = (targetacceleration - targetlastacceleration) / dt
 		
 		if missilevelocity.Magnitude < 1 then
 			missilevelocity = Vector3.new(0,1,0)
